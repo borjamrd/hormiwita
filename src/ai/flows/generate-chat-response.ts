@@ -53,6 +53,8 @@ const extractNameTool = ai.defineTool(
     outputSchema: z.object({ name: z.string().optional().describe("The extracted name of the user.") }),
   },
   async (input) => {
+    // This tool is conceptual for the LLM's guidance.
+    // The actual extraction will be done by the LLM and returned in its main JSON response.
     return { name: undefined };
   }
 );
@@ -90,9 +92,9 @@ const extractSpecificObjectivesTool = ai.defineTool(
 // Schema for the direct output from the LLM prompt
 const PromptOutputSchema = z.object({
   textResponse: z.string().describe('The chatbot response to the user query.'),
-  extractedName: z.string().optional().describe("The user's name, if extracted in the current turn based on user input and extractNameTool guidance."),
-  extractedGeneralObjectives: z.array(z.string()).optional().describe("General financial objectives, if extracted in the current turn based on user input and extractGeneralObjectivesTool guidance."),
-  extractedSpecificObjectives: z.array(z.string()).optional().describe("Specific financial objectives, if extracted in the current turn based on user input and extractSpecificObjectivesTool guidance."),
+  extractedName: z.string().nullable().optional().describe("The user's name, if extracted in the current turn based on user input and extractNameTool guidance."),
+  extractedGeneralObjectives: z.array(z.string()).nullable().optional().describe("General financial objectives, if extracted in the current turn based on user input and extractGeneralObjectivesTool guidance."),
+  extractedSpecificObjectives: z.array(z.string()).nullable().optional().describe("Specific financial objectives, if extracted in the current turn based on user input and extractSpecificObjectivesTool guidance."),
   nextExpectedInput: z.enum(["name", "general_objectives_selection", "specific_objectives_selection", "general_conversation"]).optional().describe("Indicates the type of input the AI is expecting next.")
 });
 
@@ -157,32 +159,43 @@ const generateChatResponseFlow = ai.defineFlow(
 
     if (!promptOutput || typeof promptOutput.textResponse !== 'string') {
       console.error("LLM output was missing or malformed. Full result:", llmCallResult);
+      // Fallback for text response if entirely missing, but prefer logging and using extracted data if possible
+      // Avoid crashing if only textResponse is missing but other data is fine
       console.warn("LLM output malformed, 'textResponse' field is missing. Proceeding with extracted data if any.");
     }
     
-    const chatResponseText = promptOutput?.textResponse || "No se pudo generar una respuesta de texto.";
+    const chatResponseText = promptOutput?.textResponse || "No se pudo generar una respuesta de texto."; // Ensure chatResponseText is always a string
     const nextExpectedInput = promptOutput?.nextExpectedInput || "general_conversation";
 
-    let cumulativeName = input.userData?.name;
-    let cumulativeGeneralObjectives = input.userData?.generalObjectives || [];
-    let cumulativeSpecificObjectives = input.userData?.specificObjectives || [];
+    // Initialize cumulative data with existing userData or defaults
+    let cumulativeName = input.userData?.name; // string | undefined
+    let cumulativeGeneralObjectives = input.userData?.generalObjectives || []; // string[]
+    let cumulativeSpecificObjectives = input.userData?.specificObjectives || []; // string[]
 
-    if (promptOutput?.extractedName) {
+    // Update with extracted data if present and not null
+    // The .optional() and .nullable() in PromptOutputSchema handle undefined/null from LLM
+    // Here, we only update if the value is truthy (i.e., an actual string or non-empty array)
+    if (promptOutput?.extractedName) { // Only updates if extractedName is a non-empty string
       cumulativeName = promptOutput.extractedName;
     }
     if (promptOutput?.extractedGeneralObjectives && promptOutput.extractedGeneralObjectives.length > 0) {
+      // Combine and remove duplicates
       cumulativeGeneralObjectives = Array.from(new Set([...cumulativeGeneralObjectives, ...promptOutput.extractedGeneralObjectives]));
     }
     if (promptOutput?.extractedSpecificObjectives && promptOutput.extractedSpecificObjectives.length > 0) {
+      // Combine and remove duplicates
       cumulativeSpecificObjectives = Array.from(new Set([...cumulativeSpecificObjectives, ...promptOutput.extractedSpecificObjectives]));
     }
     
+    // Construct final user data, ensuring optional fields are undefined if empty/not set
     const finalUserData: UserData = {
-      name: cumulativeName,
+      name: cumulativeName, // Will be string or undefined
       generalObjectives: cumulativeGeneralObjectives.length > 0 ? cumulativeGeneralObjectives : undefined,
       specificObjectives: cumulativeSpecificObjectives.length > 0 ? cumulativeSpecificObjectives : undefined,
     };
     
+    // Determine if userData should be included in the response
+    // It should be included if it's the initial population or if any relevant field changed
     const nameChanged = finalUserData.name !== input.userData?.name;
     
     const generalObjectivesChanged = (() => {
@@ -203,8 +216,9 @@ const generateChatResponseFlow = ai.defineFlow(
 
     return {
       response: chatResponseText,
-      updatedUserData: shouldIncludeUserData ? finalUserData : input.userData,
+      updatedUserData: shouldIncludeUserData ? finalUserData : input.userData, // Send back original if no relevant change
       nextExpectedInput: nextExpectedInput,
     };
   }
 );
+
