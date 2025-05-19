@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { UploadCloud, FileText, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 import { analyzeBankStatement, type AnalyzeBankStatementInput, type BankStatementSummary } from '@/ai/flows/analyze-bank-statements';
 import { useToast } from "@/hooks/use-toast";
-// Removed: import * as XLSX from 'xlsx'; 
+import * as XLSX from 'xlsx'; // For client-side Excel processing
 
 interface UploadRecordsProps {
   onAnalysisConfirmed: (summary: BankStatementSummary) => void;
@@ -32,39 +32,37 @@ export function UploadRecords({ onAnalysisConfirmed, isLoadingConversation }: Up
           description: "Por favor, sube un archivo menor a 5MB.",
         });
         setSelectedFile(null);
-        event.target.value = ""; // Reset file input
+        event.target.value = ""; 
         return;
       }
-      // Accept .csv, .xls, .xlsx
       const allowedTypes = [
         "text/csv",
-        "application/vnd.ms-excel",
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        "application/vnd.ms-excel", // .xls
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" // .xlsx
       ];
-      if (!allowedTypes.includes(file.type) && !file.name.endsWith('.csv') && !file.name.endsWith('.xls') && !file.name.endsWith('.xlsx')) {
+      const isAllowedExtension = file.name.endsWith('.csv') || file.name.endsWith('.xls') || file.name.endsWith('.xlsx');
+
+      if (!allowedTypes.includes(file.type) && !isAllowedExtension) {
         toast({
           variant: "destructive",
           title: "Tipo de Archivo no Soportado",
           description: "Por favor, sube un archivo .csv, .xls o .xlsx.",
         });
         setSelectedFile(null);
-        event.target.value = ""; // Reset file input
+        event.target.value = ""; 
         return;
       }
 
       setSelectedFile(file);
-      setAnalysisResult(null); // Reset previous analysis
+      setAnalysisResult(null); 
       setError(null);
     }
   };
 
-  const fileToDataUri = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(file); // Read the file as Data URI directly
-    });
+  // Helper to convert a string (CSV content) to a data:text/csv;base64 URI
+  const csvTextToDataUri = (csvText: string): string => {
+    const base64EncodedCsv = Buffer.from(csvText, 'utf-8').toString('base64');
+    return `data:text/csv;base64,${base64EncodedCsv}`;
   };
 
   const handleGenerateAnalysis = async () => {
@@ -82,18 +80,38 @@ export function UploadRecords({ onAnalysisConfirmed, isLoadingConversation }: Up
     setAnalysisResult(null);
 
     try {
-      // Directly convert the selected file (CSV or Excel) to Data URI
-      // The backend flow will differentiate based on MIME type
-      const dataUri = await fileToDataUri(selectedFile);
+      let dataUri: string;
+      const fileName = selectedFile.name;
+
+      if (fileName.endsWith('.csv')) {
+        const csvText = await selectedFile.text();
+        dataUri = csvTextToDataUri(csvText);
+      } else if (fileName.endsWith('.xls') || fileName.endsWith('.xlsx')) {
+        const arrayBuffer = await selectedFile.arrayBuffer();
+        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const csvText = XLSX.utils.sheet_to_csv(worksheet);
+        dataUri = csvTextToDataUri(csvText);
+      } else {
+        // Should not happen due to file type check, but as a fallback:
+        toast({
+          variant: "destructive",
+          title: "Tipo de Archivo no Soportado",
+          description: "El formato del archivo no pudo ser procesado. Intente con CSV, XLS o XLSX.",
+        });
+        setIsAnalyzing(false);
+        return;
+      }
 
       const input: AnalyzeBankStatementInput = {
         statementDataUri: dataUri,
-        originalFileName: selectedFile.name,
+        originalFileName: fileName,
       };
       const result = await analyzeBankStatement(input);
       setAnalysisResult(result);
 
-      if (result.status === "Error Parsing" || result.status === "No Data Identified" || result.status === "Unsupported File Type") {
+      if (result.status === "Error Parsing" || result.status === "No Data Identified") {
         setError(result.feedback);
          toast({
             variant: "destructive",
@@ -103,17 +121,17 @@ export function UploadRecords({ onAnalysisConfirmed, isLoadingConversation }: Up
       } else {
          toast({
             variant: "default",
-            title: "Análisis Completado", // This might now include instructions to convert Excel
+            title: "Análisis Completado",
             description: `Estado: ${result.status}`,
         });
       }
     } catch (err) {
       console.error("Error processing or analyzing file:", err);
-      const errorMessage = err instanceof Error ? err.message : "Ocurrió un error desconocido.";
+      const errorMessage = err instanceof Error ? err.message : "Ocurrió un error desconocido al procesar el archivo.";
       setError(`Error: ${errorMessage}`);
       toast({
         variant: "destructive",
-        title: "Error",
+        title: "Error de Procesamiento",
         description: errorMessage,
       });
     } finally {
@@ -123,8 +141,6 @@ export function UploadRecords({ onAnalysisConfirmed, isLoadingConversation }: Up
 
   const handleConfirmAndSend = () => {
     if (analysisResult) {
-      // Allow sending even if it's an "Unsupported File Type" status, 
-      // as the feedback will guide the user (e.g., to convert Excel to CSV).
       onAnalysisConfirmed(analysisResult);
     }
   };
@@ -203,7 +219,7 @@ export function UploadRecords({ onAnalysisConfirmed, isLoadingConversation }: Up
       <CardFooter className="p-2">
         <Button
           onClick={handleConfirmAndSend}
-          disabled={!analysisResult || isAnalyzing || isLoadingConversation}
+          disabled={!analysisResult || isAnalyzing || isLoadingConversation || analysisResult.status === "Error Parsing" || analysisResult.status === "No Data Identified" }
           className="w-full text-xs h-8"
         >
           <CheckCircle className="mr-2 h-4 w-4" />
