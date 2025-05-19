@@ -4,16 +4,17 @@
 import type { ChatMessage } from '@/store/types';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { ChatMessages } from './ChatMessages';
-import { ChatInput } from './ChatInput';
+// ChatInput is no longer directly imported here, it will be passed as a prop
 import { MessageSquareText } from 'lucide-react';
+import type React from 'react';
 
 interface ChatLayoutProps {
   messages: ChatMessage[];
   isLoadingAssistant: boolean;
-  onSendMessage: (messageContent: string) => void;
+  inputComponent: React.ReactNode; // New prop for the input area
 }
 
-export function ChatLayout({ messages, isLoadingAssistant, onSendMessage }: ChatLayoutProps) {
+export function ChatLayout({ messages, isLoadingAssistant, inputComponent }: ChatLayoutProps) {
   return (
     <Card className="w-full h-full flex flex-col shadow-xl rounded-lg overflow-hidden">
       <CardHeader className="flex flex-row items-center justify-between p-4 border-b bg-card">
@@ -27,8 +28,10 @@ export function ChatLayout({ messages, isLoadingAssistant, onSendMessage }: Chat
         <ChatMessages messages={messages} isLoadingAssistant={isLoadingAssistant} />
       </CardContent>
       <CardFooter className="p-4 border-t bg-card">
-        <ChatInput onSendMessage={onSendMessage} isLoading={isLoadingAssistant} />
+        {inputComponent} {/* Render the passed input component */}
       </CardFooter>
     </Card>
   );
 }
+
+    

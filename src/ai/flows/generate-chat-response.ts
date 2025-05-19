@@ -39,6 +39,7 @@ export type GenerateChatResponseInput = z.infer<typeof GenerateChatResponseInput
 const GenerateChatResponseOutputSchema = z.object({
   response: z.string().describe('The chatbot response to the user query.'),
   updatedUserData: UserDataSchema.optional().describe('Updated user data after processing the query, including any newly extracted information.'),
+  nextExpectedInput: z.enum(["name", "objectives_selection", "general_conversation"]).optional().describe("Hint for the frontend on what kind of input is expected next. 'name' if AI is asking for name. 'objectives_selection' if AI is asking for objectives and a chip selector should be shown. 'general_conversation' otherwise.")
 });
 export type GenerateChatResponseOutput = z.infer<typeof GenerateChatResponseOutputSchema>;
 
@@ -61,7 +62,7 @@ const extractNameTool = ai.defineTool(
 const extractObjectivesTool = ai.defineTool(
   {
     name: 'extractObjectivesTool',
-    description: "A conceptual tool to guide the LLM. If the user discusses their financial goals or what they want to achieve, the LLM should extract these objectives.",
+    description: "A conceptual tool to guide the LLM. If the user discusses their financial goals or what they want to achieve, or confirms a selection of objectives, the LLM should extract these objectives.",
     inputSchema: z.object({ query: z.string().describe("The user's message which might contain their financial objectives.") }),
     outputSchema: z.object({ objectives: z.array(z.string()).optional().describe("A list of extracted financial objectives.") }),
   },
@@ -77,6 +78,7 @@ const PromptOutputSchema = z.object({
   textResponse: z.string().describe('The chatbot response to the user query.'),
   extractedName: z.string().optional().describe("The user's name, if extracted in the current turn based on user input and extractNameTool guidance."),
   extractedObjectives: z.array(z.string()).optional().describe("Financial objectives, if extracted in the current turn based on user input and extractObjectivesTool guidance."),
+  nextExpectedInput: z.enum(["name", "objectives_selection", "general_conversation"]).optional().describe("Indicates the type of input the AI is expecting next. 'name' if asking for name, 'objectives_selection' if asking for objectives and a chip interface is appropriate, 'general_conversation' otherwise.")
 });
 
 
@@ -86,10 +88,10 @@ export async function generateChatResponse(input: GenerateChatResponseInput): Pr
 
 const systemPrompt = `Eres FinanceFriend, un asistente experto en finanzas personales. Tu objetivo principal es ayudar al usuario a organizar sus finanzas. Para ello, necesitas recopilar información en las siguientes categorías: información personal (nombre), objetivos financieros, relación de gastos e ingresos, información adicional y, finalmente, generar un resumen.
 
-Sigue este orden para recopilar la información:
-1.  **Información Personal**: Si aún no conoces el nombre del usuario (es decir, \`userData.name\` no está presente o está vacío), tu primera prioridad es preguntarle su nombre. Si el usuario provee su nombre en la respuesta, extráelo y colócalo en el campo \`extractedName\` de tu respuesta JSON. Ejemplo de pregunta: 'Hola! Para comenzar y dirigirnos mejor, ¿podrías decirme tu nombre?'.
-2.  **Objetivos Financieros**: Una vez que tengas el nombre del usuario (es decir, \`userData.name\` está presente) y si aún no conoces sus objetivos (es decir, \`userData.objectives\` no está presente o está vacío), pregúntale sobre sus principales objetivos financieros. Si el usuario provee sus objetivos, extráelos como una lista de strings y colócalos en el campo \`extractedObjectives\` de tu respuesta JSON. Ejemplo de pregunta: 'Gracias, {{userData.name}}. Ahora, cuéntame, ¿cuáles son tus principales objetivos financieros en este momento?'.
-3.  **Conversación General**: Si ya tienes el nombre y los objetivos, o si el usuario hace una pregunta general sobre finanzas no relacionada con la recopilación de datos, responde a su consulta de manera útil y concisa en el campo \`textResponse\`.
+Sigue este orden para recopilar la información y establece el campo \`nextExpectedInput\` en tu respuesta JSON según corresponda:
+1.  **Información Personal**: Si aún no conoces el nombre del usuario (es decir, \`userData.name\` no está presente o está vacío), tu primera prioridad es preguntarle su nombre. Establece \`nextExpectedInput: "name"\`. Si el usuario provee su nombre en la respuesta, extráelo y colócalo en el campo \`extractedName\`. Ejemplo de pregunta: 'Hola! Para comenzar y dirigirnos mejor, ¿podrías decirme tu nombre?'.
+2.  **Objetivos Financieros**: Una vez que tengas el nombre del usuario (es decir, \`userData.name\` está presente) y si aún no conoces sus objetivos (es decir, \`userData.objectives\` no está presente o está vacío), pregúntale sobre sus principales objetivos financieros. Establece \`nextExpectedInput: "objectives_selection"\`. Si el usuario provee sus objetivos (ya sea por texto o por una selección que se le presentará como 'Mis objetivos son: ...'), extráelos como una lista de strings y colócalos en el campo \`extractedObjectives\`. Ejemplo de pregunta: 'Gracias, {{userData.name}}. Ahora, cuéntame, ¿cuáles son tus principales objetivos financieros en este momento? (Puedes seleccionar de una lista o escribirlos)'.
+3.  **Conversación General**: Si ya tienes el nombre y los objetivos, o si el usuario hace una pregunta general sobre finanzas no relacionada con la recopilación de datos, responde a su consulta de manera útil y concisa en el campo \`textResponse\`. Establece \`nextExpectedInput: "general_conversation"\`.
 
 Instrucciones adicionales:
 - Siempre responde en español.
@@ -98,7 +100,7 @@ Instrucciones adicionales:
 - Guíate por las descripciones de las herramientas \`extractNameTool\` y \`extractObjectivesTool\` para saber cuándo y qué extraer, pero coloca los resultados en los campos \`extractedName\` y \`extractedObjectives\` de tu respuesta JSON principal. No intentes "llamar" a las herramientas de forma que esperes una respuesta de ellas; tú eres quien provee la información extraída.
 - Tu respuesta al usuario (\`textResponse\`) siempre debe ser un mensaje de chat directo. La información extraída se utilizará para actualizar un panel de información en la interfaz de usuario, no la incluyas directamente en tu respuesta de chat a menos que sea natural hacerlo (por ejemplo, para confirmar).
 - Revisa el \`chatHistory\` y \`userData\` para entender el contexto actual antes de responder.
-- Tu salida debe ser un objeto JSON que cumpla con el esquema proporcionado (PromptOutputSchema), conteniendo \`textResponse\`, y opcionalmente \`extractedName\` y/o \`extractedObjectives\`.`;
+- Tu salida debe ser un objeto JSON que cumpla con el esquema proporcionado (PromptOutputSchema), conteniendo \`textResponse\`, opcionalmente \`extractedName\` y/o \`extractedObjectives\`, y \`nextExpectedInput\`.`;
 
 const prompt = ai.definePrompt({
   name: 'generateChatResponsePrompt',
@@ -139,15 +141,20 @@ const generateChatResponseFlow = ai.defineFlow(
 
     if (!promptOutput || typeof promptOutput.textResponse !== 'string') {
       console.error("LLM output was missing or malformed. Full result:", llmCallResult);
+      // Adding a simple fallback if textResponse is missing but other data might be useful
       const toolCalls = llmCallResult.response?.parts.filter(p => p.toolRequest).length || 0;
       if (toolCalls > 0 && (!promptOutput || !promptOutput.textResponse)) {
           console.log("Model primarily made tool calls, text response part might be absent or processed by tools.");
-      } else {
-          throw new Error("LLM output malformed, missing expected 'textResponse' field for the chat response.");
+      } else if (!promptOutput?.textResponse) {
+          // If there's no textResponse, but we might have extracted data, this is an issue to log.
+          // For now, we'll proceed if other data is present, but the chatbot might not say anything.
+          console.warn("LLM output malformed, 'textResponse' field is missing. Proceeding with extracted data if any.");
       }
     }
     
     const chatResponseText = promptOutput?.textResponse || "No se pudo generar una respuesta de texto.";
+    const nextExpectedInput = promptOutput?.nextExpectedInput || "general_conversation";
+
 
     let cumulativeName = input.userData?.name;
     let cumulativeObjectives = input.userData?.objectives || [];
@@ -166,7 +173,6 @@ const generateChatResponseFlow = ai.defineFlow(
       objectives: cumulativeObjectives.length > 0 ? cumulativeObjectives : undefined,
     };
     
-    // Determine if userData has actually changed to decide if it should be included in the output
     const nameIsNewOrChanged = finalUserData.name !== input.userData?.name;
     
     const objectivesWereProvided = finalUserData.objectives && finalUserData.objectives.length > 0;
@@ -176,14 +182,12 @@ const generateChatResponseFlow = ai.defineFlow(
     if (objectivesWereProvided !== oldObjectivesWerePresent) {
         objectivesChanged = true;
     } else if (objectivesWereProvided && oldObjectivesWerePresent) {
-        // Both new and old objectives lists exist, check for content difference
-        const finalObjSet = new Set(finalUserData.objectives);
-        const inputObjSet = new Set(input.userData!.objectives);
+        const finalObjSet = new Set(finalUserData.objectives!);
+        const inputObjSet = new Set(input.userData!.objectives!);
         objectivesChanged = finalUserData.objectives!.length !== input.userData!.objectives!.length ||
                             !finalUserData.objectives!.every(obj => inputObjSet.has(obj)) ||
                             !input.userData!.objectives!.every(obj => finalObjSet.has(obj));
     }
-
 
     const isInitialPopulation = !input.userData && (finalUserData.name || (finalUserData.objectives && finalUserData.objectives.length > 0));
     
@@ -192,6 +196,10 @@ const generateChatResponseFlow = ai.defineFlow(
     return {
       response: chatResponseText,
       updatedUserData: shouldIncludeUserData ? finalUserData : input.userData,
+      nextExpectedInput: nextExpectedInput,
     };
   }
 );
+
+
+    

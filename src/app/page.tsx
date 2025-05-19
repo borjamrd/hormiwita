@@ -5,7 +5,9 @@ import { useState, useEffect } from 'react';
 import type { ChatMessage } from '@/store/types';
 import { ChatLayout } from '@/components/chat/ChatLayout';
 import { InfoPanel } from '@/components/info-panel/InfoPanel';
-import { generateChatResponse, type GenerateChatResponseInput, type UserData } from '@/ai/flows/generate-chat-response';
+import { ChatInput } from '@/components/chat/ChatInput';
+import { ObjectivesSelection } from '@/components/chat/ObjectivesSelection';
+import { generateChatResponse, type GenerateChatResponseInput, type UserData, type GenerateChatResponseOutput } from '@/ai/flows/generate-chat-response';
 import { useToast } from "@/hooks/use-toast";
 
 export default function ChatPage() {
@@ -13,6 +15,8 @@ export default function ChatPage() {
   const [isLoadingAssistant, setIsLoadingAssistant] = useState(false);
   const { toast } = useToast();
   const [userData, setUserData] = useState<UserData>({ name: undefined, objectives: [] });
+  const [showObjectivesSelection, setShowObjectivesSelection] = useState(false);
+  const [nextInputHint, setNextInputHint] = useState<GenerateChatResponseOutput['nextExpectedInput'] | undefined>(undefined);
 
   useEffect(() => {
     // Initial greeting message from the assistant
@@ -26,7 +30,15 @@ export default function ChatPage() {
     ]);
   }, []);
 
-  const handleSendMessage = async (content: string) => {
+  useEffect(() => {
+    if (nextInputHint === 'objectives_selection' && !isLoadingAssistant) {
+      setShowObjectivesSelection(true);
+    } else {
+      setShowObjectivesSelection(false);
+    }
+  }, [nextInputHint, isLoadingAssistant]);
+
+  const handleSendMessage = async (content: string, isObjectiveSubmission: boolean = false) => {
     const userMessage: ChatMessage = {
       id: crypto.randomUUID(),
       role: 'user',
@@ -36,10 +48,13 @@ export default function ChatPage() {
     const currentMessages = [...messages, userMessage];
     setMessages(currentMessages);
     setIsLoadingAssistant(true);
+    if (isObjectiveSubmission) { // If submitting objectives, ensure the selector is hidden
+        setShowObjectivesSelection(false);
+    }
+
 
     try {
-      // Prepare chat history for the flow
-      const chatHistoryForFlow = currentMessages.slice(-10).map(msg => ({ // Send last 10 messages
+      const chatHistoryForFlow = currentMessages.slice(-10).map(msg => ({
         role: msg.role,
         content: msg.content,
       }));
@@ -54,6 +69,11 @@ export default function ChatPage() {
 
       if (aiResponse.updatedUserData) {
         setUserData(prevData => ({ ...prevData, ...aiResponse.updatedUserData }));
+      }
+      if (aiResponse.nextExpectedInput) {
+        setNextInputHint(aiResponse.nextExpectedInput);
+      } else {
+        setNextInputHint('general_conversation'); 
       }
 
       const assistantMessage: ChatMessage = {
@@ -82,6 +102,22 @@ export default function ChatPage() {
     }
   };
 
+  const handleObjectivesSubmit = async (selectedObjectives: string[]) => {
+    if (selectedObjectives.length === 0) {
+      toast({
+        variant: "destructive",
+        title: "Selección Requerida",
+        description: "Por favor, selecciona al menos un objetivo.",
+      });
+      return;
+    }
+    // Format a message as if the user typed it, to be processed by the AI
+    const objectivesMessage = `Mis objetivos financieros seleccionados son: ${selectedObjectives.join(', ')}.`;
+    // Pass true to indicate this is an objective submission
+    await handleSendMessage(objectivesMessage, true); 
+  };
+
+
   return (
     <main className="flex flex-col items-center justify-center min-h-screen bg-background p-2 sm:p-4">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-6xl h-[calc(100vh-2rem)] md:h-[700px]">
@@ -89,7 +125,19 @@ export default function ChatPage() {
           <ChatLayout
             messages={messages}
             isLoadingAssistant={isLoadingAssistant}
-            onSendMessage={handleSendMessage}
+            inputComponent={
+              showObjectivesSelection ? (
+                <ObjectivesSelection
+                  onObjectivesSubmit={handleObjectivesSubmit}
+                  isLoading={isLoadingAssistant}
+                />
+              ) : (
+                <ChatInput
+                  onSendMessage={handleSendMessage}
+                  isLoading={isLoadingAssistant}
+                />
+              )
+            }
           />
         </div>
         <div className="md:col-span-1 h-full md:h-[700px] overflow-y-auto flex flex-col gap-4">
@@ -99,3 +147,5 @@ export default function ChatPage() {
     </main>
   );
 }
+
+    
