@@ -280,7 +280,7 @@ export default function ChatPage() {
             inputComponent={inputComponentToRender()}
           />
         </div>
-        <div className="md:col-span-1 h-full flex flex-col"> {/* Removed overflow-y-auto, md:h-[700px], and gap-4 */}
+        <div className="md:col-span-1 h-full flex flex-col md:sticky md:top-4"> {/* Added md:sticky and md:top-4 */}
           <InfoPanel userData={userData} />
         </div>
       </div>
