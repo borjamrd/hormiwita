@@ -1,18 +1,24 @@
 
 "use client";
 
+import { useState } from 'react';
 import type { BankStatementSummary, ProviderTransactionSummary } from '@/ai/flows/analyze-bank-statements';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { categorizeFinancialData, type CategorizationInput, type CategorizedItem, type CategorizationOutput } from '@/ai/flows/categorize-financial-data';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
+import { BrainCircuit, Loader2 } from 'lucide-react'; // BrainCircuit for AI icon
+import { useToast } from "@/hooks/use-toast";
 
 interface RecordCategorizerProps {
   analysisResult: BankStatementSummary;
 }
 
-const expenseCategories: string[] = [
+const expenseCategoriesDefault: string[] = [
   "Vivienda: Alquiler / Hipoteca", "Vivienda: Comunidad de Propietarios", "Vivienda: IBI (Impuesto sobre Bienes Inmuebles)", "Vivienda: Seguro del Hogar", "Vivienda: Reparaciones y Mantenimiento",
   "Suministros: Luz", "Suministros: Agua", "Suministros: Gas / Calefacción", "Suministros: Internet", "Suministros: Telefonía (Fija y Móvil)", "Suministros: Plataformas de Streaming / TV de pago",
   "Alimentación: Supermercado y Comestibles", "Alimentación: Comida a Domicilio / Para Llevar",
@@ -32,7 +38,7 @@ const expenseCategories: string[] = [
   "Otros Gastos"
 ];
 
-const incomeCategories: string[] = [
+const incomeCategoriesDefault: string[] = [
   "Nómina / Salario",
   "Trabajo Autónomo / Freelance",
   "Prestaciones y Subsidios: Prestación por Desempleo", "Prestaciones y Subsidios: Bajas por Enfermedad / Maternidad / Paternidad", "Prestaciones y Subsidios: Ayudas Gubernamentales",
@@ -43,6 +49,11 @@ const incomeCategories: string[] = [
   "Ventas y Reembolsos: Venta de artículos personales", "Ventas y Reembolsos: Reembolsos de compras o servicios", "Ventas y Reembolsos: Devoluciones de impuestos",
   "Otros Ingresos: Premios", "Otros Ingresos: Colaboraciones esporádicas"
 ];
+
+interface GroupedCategoryData {
+  total: number;
+  providers: CategorizedItem[];
+}
 
 const ProviderTable: React.FC<{ title: string; data: ProviderTransactionSummary[] | undefined; currency: string | undefined }> = ({ title, data, currency }) => {
   if (!data || data.length === 0) {
@@ -61,7 +72,7 @@ const ProviderTable: React.FC<{ title: string; data: ProviderTransactionSummary[
         </TableHeader>
         <TableBody>
           {data.map((item, index) => (
-            <TableRow key={index}>
+            <TableRow key={`${item.providerName}-${index}`}>
               <TableCell className="py-1.5 font-medium truncate max-w-32 md:max-w-40">{item.providerName}</TableCell>
               <TableCell className="py-1.5 text-center">{item.transactionCount}</TableCell>
               <TableCell className="py-1.5 text-right">
@@ -76,17 +87,144 @@ const ProviderTable: React.FC<{ title: string; data: ProviderTransactionSummary[
   );
 };
 
+const CategorizedAccordion: React.FC<{
+  title: string;
+  groupedData: Record<string, GroupedCategoryData>;
+  currency: string | undefined;
+  itemType: 'income' | 'expense';
+}> = ({ title, groupedData, currency, itemType }) => {
+  if (Object.keys(groupedData).length === 0) {
+    return <p className="text-sm text-muted-foreground px-1 py-2">No hay datos categorizados para {title.toLowerCase()}.</p>;
+  }
+  const defaultOpenValue = Object.keys(groupedData)[0]; // Open first category by default
+  return (
+    <div className="my-3">
+      <h4 className="text-sm font-semibold mb-1.5 px-1">{title}</h4>
+      <Accordion type="single" collapsible defaultValue={defaultOpenValue} className="w-full">
+        {Object.entries(groupedData).map(([category, data]) => (
+          <AccordionItem value={category} key={category} className="border-b">
+            <AccordionTrigger className="text-xs hover:no-underline py-2 px-1 text-left">
+              <div className="flex justify-between w-full items-center">
+                <span className="font-medium truncate max-w-48 md:max-w-xs">{category}</span>
+                <span className="text-xs font-semibold ml-2 whitespace-nowrap">
+                  {data.total.toLocaleString(undefined, { style: 'decimal', minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  {currency && <span className="ml-1 text-muted-foreground">{currency}</span>}
+                </span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="pb-1 pt-0">
+              <Table className="text-xs my-1">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="h-7 py-1">Proveedor</TableHead>
+                    <TableHead className="h-7 py-1 text-right">Monto</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {data.providers.map((providerItem, idx) => (
+                    <TableRow key={`${providerItem.providerName}-${idx}`}>
+                      <TableCell className="py-1 truncate max-w-40 md:max-w-xs">{providerItem.providerName}</TableCell>
+                      <TableCell className="py-1 text-right">
+                         {providerItem.totalAmount.toLocaleString(undefined, { style: 'decimal', minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                         {currency && <span className="ml-1 text-muted-foreground text-xs">{currency}</span>}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </AccordionContent>
+          </AccordionItem>
+        ))}
+      </Accordion>
+    </div>
+  );
+};
+
 
 export function RecordCategorizer({ analysisResult }: RecordCategorizerProps) {
-  const { incomeByProvider, expensesByProvider, totalIncome, totalExpenses, detectedCurrency, unassignedTransactions } = analysisResult;
+  const { incomeByProvider, expensesByProvider, totalIncome, totalExpenses, detectedCurrency, unassignedTransactions, feedback, status } = analysisResult;
+  const { toast } = useToast();
+
+  const [categorizedIncomeItems, setCategorizedIncomeItems] = useState<CategorizedItem[] | null>(null);
+  const [categorizedExpenseItems, setCategorizedExpenseItems] = useState<CategorizedItem[] | null>(null);
+  const [isCategorizing, setIsCategorizing] = useState(false);
+
+  const groupAndSumByCategory = (items: CategorizedItem[] | null, itemType: 'income' | 'expense'): Record<string, GroupedCategoryData> => {
+    if (!items) return {};
+    return items.reduce((acc, item) => {
+      const category = item.suggestedCategory || (itemType === 'income' ? "Otros Ingresos" : "Otros Gastos");
+      if (!acc[category]) {
+        acc[category] = { total: 0, providers: [] };
+      }
+      acc[category].total += item.totalAmount;
+      acc[category].providers.push(item);
+      return acc;
+    }, {} as Record<string, GroupedCategoryData>);
+  };
+
+  const groupedCategorizedIncome = groupAndSumByCategory(categorizedIncomeItems, 'income');
+  const groupedCategorizedExpenses = groupAndSumByCategory(categorizedExpenseItems, 'expense');
+
+  const handleAutocategorize = async () => {
+    if (!analysisResult) return;
+    setIsCategorizing(true);
+    setCategorizedIncomeItems(null); // Reset previous results
+    setCategorizedExpenseItems(null);
+
+    try {
+      let finalIncomeItems: CategorizedItem[] = [];
+      if (analysisResult.incomeByProvider && analysisResult.incomeByProvider.length > 0) {
+        const incomeInput: CategorizationInput = {
+          itemsToCategorize: analysisResult.incomeByProvider,
+          itemType: "income",
+          existingCategories: incomeCategoriesDefault,
+          language: "es",
+        };
+        const incomeResponse = await categorizeFinancialData(incomeInput);
+        finalIncomeItems = incomeResponse.categorizedItems;
+      }
+      setCategorizedIncomeItems(finalIncomeItems);
+
+      let finalExpenseItems: CategorizedItem[] = [];
+      if (analysisResult.expensesByProvider && analysisResult.expensesByProvider.length > 0) {
+        const expenseInput: CategorizationInput = {
+          itemsToCategorize: analysisResult.expensesByProvider,
+          itemType: "expense",
+          existingCategories: expenseCategoriesDefault,
+          language: "es",
+        };
+        const expenseResponse = await categorizeFinancialData(expenseInput);
+        finalExpenseItems = expenseResponse.categorizedItems;
+      }
+      setCategorizedExpenseItems(finalExpenseItems);
+
+      toast({
+        title: "Autocategorización Completada",
+        description: "Las transacciones han sido categorizadas por la IA.",
+        variant: "default",
+      });
+
+    } catch (error) {
+      console.error("Error durante la autocategorización:", error);
+      toast({
+        title: "Error en Autocategorización",
+        description: (error instanceof Error ? error.message : "Ocurrió un error desconocido."),
+        variant: "destructive",
+      });
+    } finally {
+      setIsCategorizing(false);
+    }
+  };
 
   const formatCurrency = (amount: number | undefined) => {
     if (amount === undefined) return '-';
     return `${amount.toLocaleString(undefined, { style: 'decimal', minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${detectedCurrency || ''}`;
   };
+  
+  const showCategorizedView = categorizedIncomeItems !== null || categorizedExpenseItems !== null;
 
   return (
-    <div className="flex flex-col md:flex-row gap-3 md:gap-4 max-h-[calc(100vh-250px)] md:max-h-[550px] p-1">
+    <div className="flex flex-col md:flex-row gap-3 md:gap-4 max-h-[calc(100vh-250px)] md:max-h-[calc(100vh-180px)] p-1">
       
       <Card className="flex flex-col md:w-1/2 overflow-hidden">
         <CardHeader className="p-3">
@@ -105,26 +243,41 @@ export function RecordCategorizer({ analysisResult }: RecordCategorizerProps) {
         </CardHeader>
         <CardContent className="p-0 flex-1 overflow-hidden">
           <ScrollArea className="h-full p-3 pt-0">
-            <ProviderTable title="Ingresos por Pagador" data={incomeByProvider} currency={detectedCurrency} />
-            <Separator className="my-3" />
-            <ProviderTable title="Gastos por Beneficiario" data={expensesByProvider} currency={detectedCurrency} />
-             {(!incomeByProvider || incomeByProvider.length === 0) && (!expensesByProvider || expensesByProvider.length === 0) && (
-                <p className="text-sm text-muted-foreground p-2 text-center">No se identificaron transacciones detalladas por proveedor.</p>
+            {showCategorizedView ? (
+              <>
+                <CategorizedAccordion title="Ingresos Categorizados" groupedData={groupedCategorizedIncome} currency={detectedCurrency} itemType="income" />
+                <Separator className="my-3" />
+                <CategorizedAccordion title="Gastos Categorizados" groupedData={groupedCategorizedExpenses} currency={detectedCurrency} itemType="expense" />
+              </>
+            ) : (
+              <>
+                <ProviderTable title="Ingresos por Pagador" data={incomeByProvider} currency={detectedCurrency} />
+                <Separator className="my-3" />
+                <ProviderTable title="Gastos por Beneficiario" data={expensesByProvider} currency={detectedCurrency} />
+                {(!incomeByProvider || incomeByProvider.length === 0) && (!expensesByProvider || expensesByProvider.length === 0) && (
+                    <p className="text-sm text-muted-foreground p-2 text-center">No se identificaron transacciones detalladas por proveedor.</p>
+                )}
+              </>
             )}
           </ScrollArea>
         </CardContent>
+         <CardFooter className="p-2 border-t">
+            <Button onClick={handleAutocategorize} disabled={isCategorizing || status === "Error Parsing" || status === "No Data Identified"} className="w-full text-xs h-8">
+                {isCategorizing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
+                Autocategorizar
+            </Button>
+        </CardFooter>
       </Card>
 
       <div className="flex flex-col flex-1 md:w-1/2 md:h-full gap-3 md:gap-4 overflow-hidden">
-        
         <Card className="flex flex-col overflow-hidden max-h-[15.625rem]">
           <CardHeader className="p-3">
-            <CardTitle className="text-base">Categorías de Gastos</CardTitle>
+            <CardTitle className="text-base">Categorías de Gastos (Referencia)</CardTitle>
           </CardHeader>
           <CardContent className="p-0 flex-1 overflow-hidden">
             <ScrollArea className="h-full p-3 pt-0">
               <div className="space-y-1.5">
-                {expenseCategories.map((category, index) => (
+                {expenseCategoriesDefault.map((category, index) => (
                   <Badge key={index} variant="outline" className="mr-1.5 mb-1.5 text-xs font-normal">{category}</Badge>
                 ))}
               </div>
@@ -134,12 +287,12 @@ export function RecordCategorizer({ analysisResult }: RecordCategorizerProps) {
 
         <Card className="flex flex-col overflow-hidden max-h-[15.625rem]">
           <CardHeader className="p-3">
-            <CardTitle className="text-base">Categorías de Ingresos</CardTitle>
+            <CardTitle className="text-base">Categorías de Ingresos (Referencia)</CardTitle>
           </CardHeader>
           <CardContent className="p-0 flex-1 overflow-hidden">
             <ScrollArea className="h-full p-3 pt-0">
               <div className="space-y-1.5">
-                {incomeCategories.map((category, index) => (
+                {incomeCategoriesDefault.map((category, index) => (
                   <Badge key={index} variant="outline" className="mr-1.5 mb-1.5 text-xs font-normal">{category}</Badge>
                 ))}
               </div>
