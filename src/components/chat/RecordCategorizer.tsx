@@ -1,9 +1,9 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { BankStatementSummary, ProviderTransactionSummary } from '@/ai/flows/analyze-bank-statements';
-import { categorizeFinancialData, type CategorizationInput, type CategorizedItem } from '@/ai/flows/categorize-financial-data'; // Removed CategorizationOutput as it's not directly used here
+import { categorizeFinancialData, type CategorizationInput, type CategorizedItem } from '@/ai/flows/categorize-financial-data';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -18,6 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface RecordCategorizerProps {
   analysisResult: BankStatementSummary;
+  onCategorizationComplete: (success: boolean) => void; // Nueva prop
 }
 
 const expenseCategoriesDefault: string[] = [
@@ -142,7 +143,7 @@ const CategorizedAccordion: React.FC<{
 };
 
 
-export function RecordCategorizer({ analysisResult }: RecordCategorizerProps) {
+export function RecordCategorizer({ analysisResult, onCategorizationComplete }: RecordCategorizerProps) {
   const { incomeByProvider, expensesByProvider, totalIncome, totalExpenses, detectedCurrency, status } = analysisResult;
   const { toast } = useToast();
 
@@ -150,6 +151,13 @@ export function RecordCategorizer({ analysisResult }: RecordCategorizerProps) {
   const [categorizedExpenseItems, setCategorizedExpenseItems] = useState<CategorizedItem[] | null>(null);
   const [isCategorizing, setIsCategorizing] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+
+  useEffect(() => {
+    // Reset categorized state if analysisResult changes (e.g., new file)
+    setCategorizedIncomeItems(null);
+    setCategorizedExpenseItems(null);
+    onCategorizationComplete(false);
+  }, [analysisResult, onCategorizationComplete]);
 
 
   const groupAndSumByCategory = (items: CategorizedItem[] | null, itemType: 'income' | 'expense'): Record<string, GroupedCategoryData> => {
@@ -171,9 +179,10 @@ export function RecordCategorizer({ analysisResult }: RecordCategorizerProps) {
   const handleAutocategorize = async () => {
     if (!analysisResult) return;
     setIsCategorizing(true);
-    setCategorizedIncomeItems(null);
-    setCategorizedExpenseItems(null);
+    // No reseteamos aquí los items, solo el estado de completado
+    onCategorizationComplete(false); 
 
+    let success = false;
     try {
       let finalIncomeItems: CategorizedItem[] = [];
       if (analysisResult.incomeByProvider && analysisResult.incomeByProvider.length > 0) {
@@ -200,6 +209,9 @@ export function RecordCategorizer({ analysisResult }: RecordCategorizerProps) {
         finalExpenseItems = expenseResponse.categorizedItems;
       }
       setCategorizedExpenseItems(finalExpenseItems);
+      
+      // Consider categorization successful if the process ran, even if no items were categorized (empty arrays)
+      success = true; 
 
       toast({
         title: "Autocategorización Completada",
@@ -209,6 +221,7 @@ export function RecordCategorizer({ analysisResult }: RecordCategorizerProps) {
 
     } catch (error) {
       console.error("Error durante la autocategorización:", error);
+      success = false;
       toast({
         title: "Error en Autocategorización",
         description: (error instanceof Error ? error.message : "Ocurrió un error desconocido."),
@@ -216,6 +229,7 @@ export function RecordCategorizer({ analysisResult }: RecordCategorizerProps) {
       });
     } finally {
       setIsCategorizing(false);
+      onCategorizationComplete(success); // Informar si la categorización fue exitosa o no
     }
   };
 
@@ -317,6 +331,3 @@ export function RecordCategorizer({ analysisResult }: RecordCategorizerProps) {
     </Card>
   );
 }
-
-
-    
