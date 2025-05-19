@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { ChatMessage } from '@/store/types';
@@ -14,7 +15,7 @@ interface ChatLayoutProps {
 
 export function ChatLayout({ messages, isLoadingAssistant, onSendMessage }: ChatLayoutProps) {
   return (
-    <Card className="w-full max-w-2xl h-[calc(100vh-4rem)] md:h-[700px] flex flex-col shadow-xl rounded-lg overflow-hidden">
+    <Card className="w-full h-full flex flex-col shadow-xl rounded-lg overflow-hidden">
       <CardHeader className="flex flex-row items-center justify-between p-4 border-b bg-card">
         <div className="flex items-center gap-3">
           <MessageSquareText className="h-7 w-7 text-primary" data-ai-hint="logo finance"/>
