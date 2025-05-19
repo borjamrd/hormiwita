@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { UploadCloud, FileText, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 import { analyzeBankStatement, type AnalyzeBankStatementInput, type BankStatementSummary } from '@/ai/flows/analyze-bank-statements';
 import { useToast } from "@/hooks/use-toast";
+import * as XLSX from 'xlsx'; // For client-side Excel processing
 
 interface UploadRecordsProps {
   onAnalysisConfirmed: (summary: BankStatementSummary) => void;
@@ -40,8 +41,16 @@ export function UploadRecords({ onAnalysisConfirmed, isLoadingConversation }: Up
     }
   };
 
-  const fileToDataUri = (file: File): Promise<string> => {
+  const fileToDataUri = (file: File, processedText?: string): Promise<string> => {
     return new Promise((resolve, reject) => {
+      if (processedText) {
+        // If text is already processed (e.g., Excel to CSV), encode that directly
+        const base64Text = btoa(unescape(encodeURIComponent(processedText))); // Ensure proper UTF-8 handling for base64
+        resolve(`data:text/csv;base64,${base64Text}`);
+        return;
+      }
+
+      // For direct file to Data URI (e.g. original CSV)
       const reader = new FileReader();
       reader.onload = () => resolve(reader.result as string);
       reader.onerror = reject;
@@ -64,11 +73,36 @@ export function UploadRecords({ onAnalysisConfirmed, isLoadingConversation }: Up
     setAnalysisResult(null);
 
     try {
-      const dataUri = await fileToDataUri(selectedFile);
-      const input: AnalyzeBankStatementInput = { statementDataUri: dataUri };
+      let dataUri: string;
+      const fileName = selectedFile.name.toLowerCase();
+
+      if (fileName.endsWith('.csv')) {
+        dataUri = await fileToDataUri(selectedFile);
+      } else if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
+        const arrayBuffer = await selectedFile.arrayBuffer();
+        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const csvText = XLSX.utils.sheet_to_csv(worksheet);
+        dataUri = await fileToDataUri(selectedFile, csvText); // Pass processed CSV text
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Tipo de Archivo no Soportado",
+          description: "Por favor, sube un archivo .csv, .xls o .xlsx.",
+        });
+        setIsAnalyzing(false);
+        return;
+      }
+
+      const input: AnalyzeBankStatementInput = {
+        statementDataUri: dataUri,
+        originalFileName: selectedFile.name,
+      };
       const result = await analyzeBankStatement(input);
       setAnalysisResult(result);
-      if (result.status === "Error Parsing" || result.status === "No Data Identified") {
+
+      if (result.status === "Error Parsing" || result.status === "No Data Identified" || result.status === "Unsupported File Type") {
         setError(result.feedback);
          toast({
             variant: "destructive",
@@ -83,12 +117,12 @@ export function UploadRecords({ onAnalysisConfirmed, isLoadingConversation }: Up
         });
       }
     } catch (err) {
-      console.error("Error analyzing bank statement:", err);
-      const errorMessage = err instanceof Error ? err.message : "Ocurrió un error desconocido durante el análisis.";
-      setError(`Error al analizar el archivo: ${errorMessage}`);
+      console.error("Error processing or analyzing file:", err);
+      const errorMessage = err instanceof Error ? err.message : "Ocurrió un error desconocido.";
+      setError(`Error: ${errorMessage}`);
       toast({
         variant: "destructive",
-        title: "Error de Análisis",
+        title: "Error",
         description: errorMessage,
       });
     } finally {
@@ -109,7 +143,7 @@ export function UploadRecords({ onAnalysisConfirmed, isLoadingConversation }: Up
         <CardDescription className="text-xs">
           Adjunta un histórico de tus últimos extractos bancarios.
           <br />
-          Formato admitido: Excel (.xlsx) o CSV (.csv). Máx 5MB.
+          Formato admitido: CSV (.csv), Excel (.xls, .xlsx). Máx 5MB.
         </CardDescription>
       </CardHeader>
       <CardContent className="p-2 space-y-3">
@@ -128,7 +162,7 @@ export function UploadRecords({ onAnalysisConfirmed, isLoadingConversation }: Up
               id="file-upload"
               type="file"
               className="hidden"
-              accept=".csv, .xlsx, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, text/csv"
+              accept=".csv, .xls, .xlsx, application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, text/csv"
               onChange={handleFileChange}
               disabled={isAnalyzing || isLoadingConversation}
             />
@@ -176,7 +210,7 @@ export function UploadRecords({ onAnalysisConfirmed, isLoadingConversation }: Up
       <CardFooter className="p-2">
         <Button
           onClick={handleConfirmAndSend}
-          disabled={!analysisResult || isAnalyzing || isLoadingConversation || analysisResult.status === "Error Parsing" || analysisResult.status === "No Data Identified"}
+          disabled={!analysisResult || isAnalyzing || isLoadingConversation || analysisResult.status === "Error Parsing" || analysisResult.status === "No Data Identified" || analysisResult.status === "Unsupported File Type"}
           className="w-full text-xs h-8"
         >
           <CheckCircle className="mr-2 h-4 w-4" />
