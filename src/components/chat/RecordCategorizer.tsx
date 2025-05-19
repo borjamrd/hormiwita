@@ -88,7 +88,7 @@ export function RecordCategorizer({ analysisResult }: RecordCategorizerProps) {
   return (
     <div className="flex flex-col md:flex-row gap-3 md:gap-4 max-h-[calc(100vh-250px)] md:max-h-[550px] p-1">
       {/* Columna Izquierda: Tabla de Análisis */}
-      <Card className="md:w-1/2 flex flex-col overflow-hidden">
+      <Card className="flex flex-col md:w-1/2 overflow-hidden">
         <CardHeader className="p-3">
           <CardTitle className="text-base">Resumen del Análisis</CardTitle>
           { (totalIncome !== undefined || totalExpenses !== undefined) &&
@@ -103,8 +103,8 @@ export function RecordCategorizer({ analysisResult }: RecordCategorizerProps) {
             </CardDescription>
           }
         </CardHeader>
-        <CardContent className="p-0 flex-1 overflow-hidden">
-          <ScrollArea className="h-full p-3 pt-0">
+        <CardContent className="p-0 flex-1 overflow-hidden"> {/* flex-1 here makes CardContent take remaining space in Card */}
+          <ScrollArea className="h-full p-3 pt-0"> {/* h-full makes ScrollArea fill CardContent */}
             <ProviderTable title="Ingresos por Pagador" data={incomeByProvider} currency={detectedCurrency} />
             <Separator className="my-3" />
             <ProviderTable title="Gastos por Beneficiario" data={expensesByProvider} currency={detectedCurrency} />
@@ -116,13 +116,15 @@ export function RecordCategorizer({ analysisResult }: RecordCategorizerProps) {
       </Card>
 
       {/* Columna Derecha: Categorías */}
-      <div className="md:w-1/2 flex flex-col gap-3 md:gap-4 h-full overflow-hidden">
-        <Card className="flex-1 flex flex-col overflow-hidden">
+      {/* En pantallas pequeñas (apilado vertical), flex-1 hace que este div tome el espacio vertical disponible. */}
+      {/* En pantallas md y superiores (lado a lado), md:w-1/2 y md:h-full lo dimensionan correctamente. */}
+      <div className="flex flex-col flex-1 md:flex-initial md:w-1/2 md:h-full gap-3 md:gap-4 overflow-hidden">
+        <Card className="flex-1 flex flex-col overflow-hidden"> {/* flex-1 asegura que esta Card tome la mitad de la altura de su padre (este div) */}
           <CardHeader className="p-3">
             <CardTitle className="text-base">Categorías de Gastos</CardTitle>
           </CardHeader>
-          <CardContent className="p-0 flex-1 overflow-hidden">
-            <ScrollArea className="h-full p-3 pt-0">
+          <CardContent className="p-0 flex-1 overflow-hidden"> {/* flex-1 para que CardContent llene la Card */}
+            <ScrollArea className="h-full p-3 pt-0"> {/* h-full para que ScrollArea llene CardContent */}
               <div className="space-y-1.5">
                 {expenseCategories.map((category, index) => (
                   <Badge key={index} variant="outline" className="mr-1.5 mb-1.5 text-xs font-normal">{category}</Badge>
@@ -131,12 +133,12 @@ export function RecordCategorizer({ analysisResult }: RecordCategorizerProps) {
             </ScrollArea>
           </CardContent>
         </Card>
-        <Card className="flex-1 flex flex-col overflow-hidden">
+        <Card className="flex-1 flex flex-col overflow-hidden"> {/* flex-1 asegura que esta Card tome la mitad de la altura de su padre (este div) */}
           <CardHeader className="p-3">
             <CardTitle className="text-base">Categorías de Ingresos</CardTitle>
           </CardHeader>
-          <CardContent className="p-0 flex-1 overflow-hidden">
-            <ScrollArea className="h-full p-3 pt-0">
+          <CardContent className="p-0 flex-1 overflow-hidden"> {/* flex-1 para que CardContent llene la Card */}
+            <ScrollArea className="h-full p-3 pt-0"> {/* h-full para que ScrollArea llene CardContent */}
               <div className="space-y-1.5">
                 {incomeCategories.map((category, index) => (
                   <Badge key={index} variant="outline" className="mr-1.5 mb-1.5 text-xs font-normal">{category}</Badge>
@@ -149,3 +151,5 @@ export function RecordCategorizer({ analysisResult }: RecordCategorizerProps) {
     </div>
   );
 }
+
+    
