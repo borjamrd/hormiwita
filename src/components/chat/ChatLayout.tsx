@@ -5,7 +5,7 @@ import type { ChatMessage } from '@/store/types';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { ChatMessages } from './ChatMessages';
 // ChatInput is no longer directly imported here, it will be passed as a prop
-import { MessageSquareText } from 'lucide-react';
+import Image from 'next/image'; // Import next/image
 import type React from 'react';
 
 interface ChatLayoutProps {
@@ -19,8 +19,15 @@ export function ChatLayout({ messages, isLoadingAssistant, inputComponent }: Cha
     <Card className="w-full h-full flex flex-col shadow-xl rounded-lg overflow-hidden">
       <CardHeader className="flex flex-row items-center justify-between p-4 border-b bg-card">
         <div className="flex items-center gap-3">
-          <MessageSquareText className="h-7 w-7 text-primary" data-ai-hint="logo finance"/>
-          <h1 className="text-xl font-semibold text-foreground">maspagüita Chat</h1>
+          {/* Replace MessageSquareText with the new logo */}
+          <Image 
+            src="/hormiguita_logo.png" 
+            alt="hormigüita logo" 
+            width={36} // Adjust width as needed
+            height={36} // Adjust height as needed
+            priority // Optional: if logo is critical for LCP
+          />
+          <h1 className="text-xl font-semibold text-foreground">hormigüita</h1>
         </div>
         {/* Placeholder for future elements like settings or user avatar */}
       </CardHeader>

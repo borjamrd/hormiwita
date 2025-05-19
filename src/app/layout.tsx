@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'maspagüita Chat',
+  title: 'hormigüita',
   description: 'Your personal finance and banking AI assistant.',
 };
 

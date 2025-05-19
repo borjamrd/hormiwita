@@ -1,4 +1,4 @@
-# **App Name**: maspagüita Chat
+# **App Name**: hormigüita
 
 ## Core Features:
 
