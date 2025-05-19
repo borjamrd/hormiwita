@@ -109,7 +109,7 @@ export function UploadRecords({ onAnalysisConfirmed, isLoadingConversation }: Up
         <CardDescription className="text-xs">
           Adjunta un histórico de tus últimos extractos bancarios.
           <br />
-          Formato admitido: Excel (.xls, .xlsx) o CSV (.csv). Máx 5MB.
+          Formato admitido: Excel (.xlsx) o CSV (.csv). Máx 5MB.
         </CardDescription>
       </CardHeader>
       <CardContent className="p-2 space-y-3">
@@ -128,7 +128,7 @@ export function UploadRecords({ onAnalysisConfirmed, isLoadingConversation }: Up
               id="file-upload"
               type="file"
               className="hidden"
-              accept=".csv, .xls, .xlsx, application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, text/csv"
+              accept=".csv, .xlsx, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, text/csv"
               onChange={handleFileChange}
               disabled={isAnalyzing || isLoadingConversation}
             />
@@ -186,4 +186,3 @@ export function UploadRecords({ onAnalysisConfirmed, isLoadingConversation }: Up
     </Card>
   );
 }
-
