@@ -5,13 +5,19 @@ import type { UserData } from '@/ai/flows/generate-chat-response';
 import { Accordion } from '@/components/ui/accordion';
 import { AccordionSection } from './AccordionSection';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { User, Target, FileText, Briefcase, CheckSquare, ListChecks } from 'lucide-react';
+import { User, Target, FileText, Briefcase, CheckSquare, ListChecks, FilePieChart } from 'lucide-react';
 
 interface InfoPanelProps {
   userData: UserData;
 }
 
 export function InfoPanel({ userData }: InfoPanelProps) {
+  const defaultOpenSections = ['personal-info'];
+  if (userData?.name) defaultOpenSections.push('general-objectives');
+  if (userData?.generalObjectives && userData.generalObjectives.length > 0) defaultOpenSections.push('specific-objectives');
+  if (userData?.specificObjectives && userData.specificObjectives.length > 0) defaultOpenSections.push('expenses-income');
+
+
   return (
     <Card className="w-full h-full flex flex-col shadow-lg rounded-lg">
       <CardHeader className="p-4 border-b">
@@ -21,7 +27,7 @@ export function InfoPanel({ userData }: InfoPanelProps) {
         </CardTitle>
       </CardHeader>
       <CardContent className="p-2 flex-1 overflow-y-auto">
-        <Accordion type="multiple" defaultValue={['personal-info', 'general-objectives', 'specific-objectives']} className="w-full">
+        <Accordion type="multiple" defaultValue={defaultOpenSections} className="w-full">
           <AccordionSection
             value="personal-info"
             title="Información Personal"
@@ -69,15 +75,22 @@ export function InfoPanel({ userData }: InfoPanelProps) {
           <AccordionSection
             value="expenses-income"
             title="Relación de Gastos e Ingresos"
-            icon={<FileText className="h-5 w-5 mr-2 text-primary" />}
+            icon={<FilePieChart className="h-5 w-5 mr-2 text-primary" />}
           >
-            <p className="text-sm text-muted-foreground italic">Información pendiente.</p>
+            {userData?.expensesIncomeSummary ? (
+              <div>
+                <p className="text-sm text-foreground"><span className="font-medium">Estado:</span> {userData.expensesIncomeSummary.status}</p>
+                <p className="text-sm text-foreground mt-1"><span className="font-medium">Feedback:</span> {userData.expensesIncomeSummary.feedback}</p>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground italic">Pendiente de carga y análisis de extractos.</p>
+            )}
           </AccordionSection>
 
           <AccordionSection
             value="additional-info"
             title="Información Adicional"
-            icon={<Briefcase className="h-5 w-5 mr-2 text-primary" />}
+            icon={<FileText className="h-5 w-5 mr-2 text-primary" />} 
           >
             <p className="text-sm text-muted-foreground italic">Información pendiente.</p>
           </AccordionSection>
