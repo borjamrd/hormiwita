@@ -130,27 +130,48 @@ const generateChatResponseFlow = ai.defineFlow(
     outputSchema: GenerateChatResponseOutputSchema, // Flow output schema remains the same
   },
   async (input) => {
-    const llmCallResult = await prompt(input); // llmCallResult contains the model's response
+    const llmCallResult = await prompt(input); // llmCallResult is { output: ModelWorkaroundOutputSchema | undefined, response: GenerateResponse }
 
     const chatResponseText = llmCallResult.output?.description;
 
     if (chatResponseText === undefined) {
       console.error("LLM output object did not contain a 'description' field with the chat text:", llmCallResult.output);
-      throw new Error("LLM output malformed, missing expected 'description' field for the chat response.");
+      // It's possible that if the model ONLY calls a tool and doesn't provide text, .output might be undefined.
+      // In such a scenario, we might need a default response or handle it differently.
+      // For now, let's assume a text response is usually expected or the tool use implies a text response will also be generated.
+      // If not, the prompt might need adjustment to ensure it always provides a text response part.
+      // A more robust way if output can be undefined and no text is an error:
+      if (!llmCallResult.output || typeof llmCallResult.output.description !== 'string') {
+         console.error("LLM output was missing or malformed. Full result:", llmCallResult);
+         // Fallback response if the primary text generation fails or is missing.
+         // This could also happen if a tool is called and the model doesn't provide a text part.
+         const toolCalls = llmCallResult.response?.parts.filter(p => p.toolRequest).length || 0;
+         if (toolCalls > 0 && (!llmCallResult.output || !llmCallResult.output.description)) {
+            // If a tool was called, it's okay for the main text to be empty for now, tool processing will happen.
+            // The user might not see an immediate text response if the model decided only to use a tool.
+            // This might need further refinement based on desired UX.
+            console.log("Model primarily made tool calls, text response part might be absent or processed by tools.");
+         } else {
+            throw new Error("LLM output malformed, missing expected 'description' field for the chat response.");
+         }
+      }
     }
 
     let updatedName = input.userData?.name;
     let updatedObjectives = input.userData?.objectives || [];
 
-    for (const part of llmCallResult.parts) {
-      if (part.toolResponse) {
-        if (part.toolResponse.name === 'extractNameTool' && part.toolResponse.output?.name) {
-           updatedName = part.toolResponse.output.name as string;
-        }
-        if (part.toolResponse.name === 'extractObjectivesTool' && part.toolResponse.output?.objectives) {
-           const newObjectives = part.toolResponse.output.objectives as string[];
-           // Avoid duplicates
-           updatedObjectives = Array.from(new Set([...(updatedObjectives || []), ...newObjectives]));
+    // Iterate over parts from the raw response to find tool responses
+    if (llmCallResult.response && llmCallResult.response.parts) {
+      for (const part of llmCallResult.response.parts) {
+        if (part.toolResponse) {
+          if (part.toolResponse.name === 'extractNameTool' && part.toolResponse.output?.name) {
+             updatedName = part.toolResponse.output.name as string;
+          }
+          if (part.toolResponse.name === 'extractObjectivesTool' && part.toolResponse.output?.objectives) {
+             const newObjectives = part.toolResponse.output.objectives as string[];
+             // Avoid duplicates
+             updatedObjectives = Array.from(new Set([...(updatedObjectives || []), ...newObjectives]));
+          }
         }
       }
     }
@@ -163,12 +184,16 @@ const generateChatResponseFlow = ai.defineFlow(
     const shouldIncludeUserData = (finalUserData.name && finalUserData.name !== input.userData?.name) || 
                                  (finalUserData.objectives && finalUserData.objectives.some(obj => !(input.userData?.objectives || []).includes(obj))) ||
                                  ((input.userData?.objectives || []).length !== (finalUserData.objectives || []).length) ||
-                                 // Ensure userData is included if it's the first time we're setting it, even if empty initially
                                  (!input.userData && (finalUserData.name || finalUserData.objectives));
 
 
     return {
-      response: chatResponseText, // Use the extracted text
+      // Use chatResponseText, which could be undefined if an error was thrown or if only tool calls happened without direct text.
+      // If chatResponseText is legitimately undefined (e.g. only tool call), prompt might need to ensure a text part is always returned,
+      // or the UX needs to handle states where the bot is "thinking" or "acting" without immediate text.
+      // For now, if it's undefined due to earlier checks, it will pass undefined here.
+      // A safer fallback could be an empty string or a generic message if absolutely no text comes out.
+      response: chatResponseText || (llmCallResult.response?.text ?? "No text response generated."), // Provide a fallback if description is truly missing.
       updatedUserData: shouldIncludeUserData ? finalUserData : (input.userData || {}),
     };
   }
