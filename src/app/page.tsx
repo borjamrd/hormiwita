@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import type { ChatMessage } from '@/store/types';
 import { ChatLayout } from '@/components/chat/ChatLayout';
 import { InfoPanel } from '@/components/info-panel/InfoPanel';
@@ -10,16 +10,58 @@ import { ObjectivesSelection } from '@/components/chat/ObjectivesSelection';
 import { generateChatResponse, type GenerateChatResponseInput, type UserData, type GenerateChatResponseOutput } from '@/ai/flows/generate-chat-response';
 import { useToast } from "@/hooks/use-toast";
 
+const generalObjectivesOptions = [
+  "Ahorro",
+  "Reducción y Gestión de Deuda",
+  "Gestión de Gastos",
+  "Crecimiento Financiero"
+];
+
+const specificObjectivesMap: Record<string, string[]> = {
+  "Ahorro": [
+    "Fondo de Emergencia",
+    "Ahorro para la Jubilación",
+    "Ahorro para la Entrada de una Vivienda",
+    "Ahorro para la Compra de un Vehículo",
+    "Ahorro para Viajes/Vacaciones",
+    "Ahorro para Educación",
+    "Ahorro para Inversiones",
+    "Ahorro para Compras Importantes",
+    "Ahorro para Eventos Especiales",
+  ],
+  "Reducción y Gestión de Deuda": [
+    "Pagar Deudas de Tarjetas de Crédito",
+    "Amortizar Préstamos Personales",
+    "Liquidar Préstamos Estudiantiles",
+    "Reducir la Hipoteca",
+    "Consolidar Deudas",
+    "Eliminar Deudas Pequeñas (Método Bola de Nieve o Avalancha)",
+  ],
+  "Gestión de Gastos": [
+    "Crear y Seguir un Presupuesto Mensual",
+    "Reducir Gastos Hormiga",
+    "Disminuir Gasto en Categorías Específicas",
+    "Optimizar Gastos Fijos",
+  ],
+  "Crecimiento Financiero": [
+    "Aumentar Ingresos",
+    "Incrementar el Patrimonio Neto",
+    "Alcanzar la Independencia Financiera",
+  ],
+};
+
+
 export default function ChatPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoadingAssistant, setIsLoadingAssistant] = useState(false);
   const { toast } = useToast();
-  const [userData, setUserData] = useState<UserData>({ name: undefined, objectives: [] });
-  const [showObjectivesSelection, setShowObjectivesSelection] = useState(false);
+  const [userData, setUserData] = useState<UserData>({ name: undefined, generalObjectives: [], specificObjectives: [] });
   const [nextInputHint, setNextInputHint] = useState<GenerateChatResponseOutput['nextExpectedInput'] | undefined>(undefined);
 
+  const showGeneralObjectivesSelection = useMemo(() => nextInputHint === 'general_objectives_selection' && !isLoadingAssistant, [nextInputHint, isLoadingAssistant]);
+  const showSpecificObjectivesSelection = useMemo(() => nextInputHint === 'specific_objectives_selection' && !isLoadingAssistant && (userData.generalObjectives?.length || 0) > 0, [nextInputHint, isLoadingAssistant, userData.generalObjectives]);
+
   useEffect(() => {
-    // Initial greeting message from the assistant
     setMessages([
       {
         id: crypto.randomUUID(),
@@ -28,17 +70,49 @@ export default function ChatPage() {
         timestamp: new Date(),
       },
     ]);
+     // Initial call to AI to ask for name
+     triggerInitialAIQuery();
   }, []);
 
-  useEffect(() => {
-    if (nextInputHint === 'objectives_selection' && !isLoadingAssistant) {
-      setShowObjectivesSelection(true);
-    } else {
-      setShowObjectivesSelection(false);
-    }
-  }, [nextInputHint, isLoadingAssistant]);
+  const triggerInitialAIQuery = async () => {
+    setIsLoadingAssistant(true);
+    try {
+      const flowInput: GenerateChatResponseInput = {
+        query: "", // No actual user query, AI should initiate by asking for name
+        chatHistory: [],
+        userData: { name: undefined, generalObjectives: [], specificObjectives: [] }, // Fresh start
+      };
+      const aiResponse = await generateChatResponse(flowInput);
+      
+      // The initial response from AI (asking for name) should be added to messages
+      const assistantMessage: ChatMessage = {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        content: aiResponse.response, // This should be the "Hola, para empezar..." question
+        timestamp: new Date(),
+      };
+      // Replace initial greeting with AI's first question
+      setMessages([assistantMessage]);
 
-  const handleSendMessage = async (content: string, isObjectiveSubmission: boolean = false) => {
+      if (aiResponse.updatedUserData) {
+        setUserData(prevData => ({ ...prevData, ...aiResponse.updatedUserData }));
+      }
+      setNextInputHint(aiResponse.nextExpectedInput || 'general_conversation');
+
+    } catch (error) {
+       console.error("Error during initial AI query:", error);
+       toast({
+        variant: "destructive",
+        title: "Error de Inicialización",
+        description: "No pude iniciar la conversación correctamente. Por favor, recarga la página.",
+      });
+    } finally {
+      setIsLoadingAssistant(false);
+    }
+  };
+
+
+  const handleSendMessage = async (content: string, isObjectiveSubmissionType?: 'general' | 'specific') => {
     const userMessage: ChatMessage = {
       id: crypto.randomUUID(),
       role: 'user',
@@ -48,10 +122,6 @@ export default function ChatPage() {
     const currentMessages = [...messages, userMessage];
     setMessages(currentMessages);
     setIsLoadingAssistant(true);
-    if (isObjectiveSubmission) { // If submitting objectives, ensure the selector is hidden
-        setShowObjectivesSelection(false);
-    }
-
 
     try {
       const chatHistoryForFlow = currentMessages.slice(-10).map(msg => ({
@@ -70,11 +140,7 @@ export default function ChatPage() {
       if (aiResponse.updatedUserData) {
         setUserData(prevData => ({ ...prevData, ...aiResponse.updatedUserData }));
       }
-      if (aiResponse.nextExpectedInput) {
-        setNextInputHint(aiResponse.nextExpectedInput);
-      } else {
-        setNextInputHint('general_conversation'); 
-      }
+      setNextInputHint(aiResponse.nextExpectedInput || 'general_conversation'); 
 
       const assistantMessage: ChatMessage = {
         id: crypto.randomUUID(),
@@ -102,21 +168,39 @@ export default function ChatPage() {
     }
   };
 
-  const handleObjectivesSubmit = async (selectedObjectives: string[]) => {
+  const handleGeneralObjectivesSubmit = async (selectedObjectives: string[]) => {
     if (selectedObjectives.length === 0) {
       toast({
         variant: "destructive",
         title: "Selección Requerida",
-        description: "Por favor, selecciona al menos un objetivo.",
+        description: "Por favor, selecciona al menos un objetivo general.",
       });
       return;
     }
-    // Format a message as if the user typed it, to be processed by the AI
-    const objectivesMessage = `Mis objetivos financieros seleccionados son: ${selectedObjectives.join(', ')}.`;
-    // Pass true to indicate this is an objective submission
-    await handleSendMessage(objectivesMessage, true); 
+    const objectivesMessage = `Mis objetivos generales seleccionados son: ${selectedObjectives.join(', ')}.`;
+    await handleSendMessage(objectivesMessage, 'general'); 
   };
 
+  const handleSpecificObjectivesSubmit = async (selectedObjectives: string[]) => {
+    // Allow submitting empty if no specific objectives are relevant or desired
+    const objectivesMessage = selectedObjectives.length > 0 
+      ? `Mis objetivos concretos seleccionados son: ${selectedObjectives.join(', ')}.`
+      : "No tengo objetivos concretos adicionales por ahora para los generales ya mencionados.";
+    await handleSendMessage(objectivesMessage, 'specific');
+  };
+
+  const getSpecificObjectiveOptions = (selectedGeneral: string[] | undefined): string[] => {
+    if (!selectedGeneral || selectedGeneral.length === 0) return [];
+    let options: string[] = [];
+    selectedGeneral.forEach(general => {
+      if (specificObjectivesMap[general]) {
+        options = [...options, ...specificObjectivesMap[general]];
+      }
+    });
+    return Array.from(new Set(options)); 
+  };
+
+  const currentSpecificOptions = useMemo(() => getSpecificObjectiveOptions(userData.generalObjectives), [userData.generalObjectives]);
 
   return (
     <main className="flex flex-col items-center justify-center min-h-screen bg-background p-2 sm:p-4">
@@ -126,14 +210,24 @@ export default function ChatPage() {
             messages={messages}
             isLoadingAssistant={isLoadingAssistant}
             inputComponent={
-              showObjectivesSelection ? (
+              showSpecificObjectivesSelection ? (
                 <ObjectivesSelection
-                  onObjectivesSubmit={handleObjectivesSubmit}
+                  title="Selecciona tus objetivos concretos (opcional):"
+                  options={currentSpecificOptions}
+                  onObjectivesSubmit={handleSpecificObjectivesSubmit}
+                  isLoading={isLoadingAssistant}
+                  allowEmptySubmission={true} 
+                />
+              ) : showGeneralObjectivesSelection ? (
+                <ObjectivesSelection
+                  title="Selecciona tus principales objetivos generales:"
+                  options={generalObjectivesOptions}
+                  onObjectivesSubmit={handleGeneralObjectivesSubmit}
                   isLoading={isLoadingAssistant}
                 />
               ) : (
                 <ChatInput
-                  onSendMessage={handleSendMessage}
+                  onSendMessage={(msg) => handleSendMessage(msg)}
                   isLoading={isLoadingAssistant}
                 />
               )
@@ -147,5 +241,3 @@ export default function ChatPage() {
     </main>
   );
 }
-
-    
