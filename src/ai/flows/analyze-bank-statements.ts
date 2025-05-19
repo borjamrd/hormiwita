@@ -31,8 +31,9 @@ export type BankStatementSummary = z.infer<typeof BankStatementSummarySchema>;
 
 // Schema for the input of the Genkit prompt (internal)
 const PromptInputSchema = z.object({
-    statementTextContent: z.string().optional().describe("The textual content of the bank statement (e.g., CSV data)."),
-    fileType: z.enum(["csv", "excel_unsupported", "other_unsupported"]).describe("The type of file provided for analysis guidance.")
+    csvData: z.object({ statementTextContent: z.string() }).optional().describe("The textual content of the bank statement if it's a CSV file."),
+    excelUnsupportedMarker: z.object({}).optional().describe("A marker object indicating an Excel file was provided, which is currently unsupported for direct content analysis."),
+    otherUnsupportedMarker: z.object({ errorMessage: z.string().optional() }).optional().describe("A marker object for other unsupported file types or pre-processing errors.")
 });
 
 
@@ -48,12 +49,12 @@ const analysisPrompt = ai.definePrompt({
   output: { schema: BankStatementSummarySchema },
   prompt: `You are a financial data analyst AI.
 
-{{#if (eq fileType "csv")}}
+{{#if csvData}}
 Your task is to analyze the provided bank statement data which is in CSV text format.
 Focus on identifying overall income, expenses, and general transaction patterns from the CSV data below.
 
 CSV Data:
-{{{statementTextContent}}}
+{{{csvData.statementTextContent}}}
 
 Based on your analysis, provide a structured JSON response conforming to the BankStatementSummarySchema.
 - For 'status':
@@ -64,18 +65,27 @@ Based on your analysis, provide a structured JSON response conforming to the Ban
 - For 'feedback': Provide a concise textual summary. For example, "Successfully analyzed statement. Identified X income transactions and Y expense transactions." or "Could not parse the CSV data."
   If possible, mention very high-level insights. Do not invent data if not present.
 
-{{else if (eq fileType "excel_unsupported")}}
-The user attempted to upload an Excel (.xlsx) file. This system cannot directly process Excel files in this version due to limitations.
+{{else}}{{#if excelUnsupportedMarker}}
+The user attempted to upload an Excel (.xlsx or .xls) file. This system cannot directly process Excel files in this version due to limitations.
 Please generate a response with:
 - 'status': "Unsupported Format"
-- 'feedback': "Excel (.xlsx) file analysis is not supported in this version. Please convert your file to CSV format and try uploading again."
+- 'feedback': "Excel file analysis is not supported in this version. Please convert your file to CSV format and try uploading again."
 
-{{else}}
-The user attempted to upload an unsupported file type or the file data was not recognized.
+{{else}}{{#if otherUnsupportedMarker}}
+The user attempted to upload an unsupported file type, or the file data was not recognized or could not be pre-processed.
+{{#if otherUnsupportedMarker.errorMessage}}
+Details: {{otherUnsupportedMarker.errorMessage}}
+{{/if}}
 Please generate a response with:
 - 'status': "Unsupported Format"
 - 'feedback': "The uploaded file type is not supported or could not be processed. Please upload a CSV file."
-{{/if}}
+{{else}}
+{{! This block should ideally not be reached if the pre-processing logic is correct }}
+An unexpected file processing scenario occurred. The file type could not be determined, or no specific handling was applied.
+Please generate a response with:
+- 'status': "Error Parsing"
+- 'feedback': "Could not determine the file type for analysis or an internal error occurred during pre-processing."
+{{/if}}{{/if}}{{/if}}
 
 Your output MUST be a valid JSON object matching the BankStatementSummarySchema.
 `,
@@ -102,20 +112,17 @@ const analyzeBankStatementFlow = ai.defineFlow(
 
       if (mimeType === 'text/csv') {
         const csvText = Buffer.from(base64Data, 'base64').toString('utf-8');
-        promptPayload = { statementTextContent: csvText, fileType: 'csv' };
+        promptPayload = { csvData: { statementTextContent: csvText } };
       } else if (mimeType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || mimeType === 'application/vnd.ms-excel') {
-        // Note: application/vnd.ms-excel is for .xls, which we also can't process.
-        // Gemini API itself rejects these mimeTypes if sent with {{media}}, and we can't parse them server-side without new libs.
-        promptPayload = { fileType: 'excel_unsupported' };
+        promptPayload = { excelUnsupportedMarker: {} };
       } else {
-        promptPayload = { fileType: 'other_unsupported' };
+        // For any other MIME type not explicitly handled
+        promptPayload = { otherUnsupportedMarker: { errorMessage: `Unsupported MIME type: ${mimeType}` } };
       }
     } catch (error) {
       console.error("Error pre-processing bank statement URI:", error);
       const errorMessage = error instanceof Error ? error.message : "Unknown error during file pre-processing.";
-      // If pre-processing fails, we can directly return or construct a payload for the LLM to generate the error message.
-      // Here, let's have the LLM generate it for consistency.
-      promptPayload = { fileType: 'other_unsupported', statementTextContent: `Pre-processing error: ${errorMessage}` };
+      promptPayload = { otherUnsupportedMarker: { errorMessage } };
     }
 
     // Call the prompt with the prepared payload
@@ -123,14 +130,17 @@ const analyzeBankStatementFlow = ai.defineFlow(
 
     if (!output) {
       // Fallback if LLM fails.
-      let fallbackStatus: "Error Parsing" | "Unsupported Format" = "Error Parsing";
+      let fallbackStatus: BankStatementSummary['status'] = "Error Parsing";
       let fallbackFeedback = "The AI model could not generate a response.";
-      if (promptPayload.fileType === "excel_unsupported" || promptPayload.fileType === "other_unsupported") {
+
+      if (promptPayload.excelUnsupportedMarker) {
         fallbackStatus = "Unsupported Format";
-        fallbackFeedback = promptPayload.fileType === "excel_unsupported"
-            ? "Excel (.xlsx) file analysis is not supported. Please convert to CSV."
-            : "Unsupported file type. Please use CSV.";
-      }
+        fallbackFeedback = "Excel file analysis is not supported. Please convert to CSV.";
+      } else if (promptPayload.otherUnsupportedMarker) {
+        fallbackStatus = "Unsupported Format";
+        fallbackFeedback = `Unsupported file type or pre-processing error: ${promptPayload.otherUnsupportedMarker.errorMessage || "Please use CSV."}`;
+      } // If it was csvData and LLM failed, "Error Parsing" is a reasonable default.
+
       return {
         status: fallbackStatus,
         feedback: fallbackFeedback,
