@@ -271,9 +271,9 @@ export default function ChatPage() {
 
 
   return (
-    <main className="flex flex-col items-center justify-center min-h-screen bg-background p-2 sm:p-4">
+    <main className="flex flex-col items-center min-h-screen bg-background p-2 sm:p-10">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-6xl h-[calc(100vh-2rem)] md:h-[700px]">
-        <div className="md:col-span-2 h-full">
+        <div className="md:col-span-2">
           <ChatLayout
             messages={messages}
             isLoadingAssistant={isLoadingAssistant}

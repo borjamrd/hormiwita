@@ -22,9 +22,8 @@ export function ChatAvatar({ role }: ChatAvatarProps) {
         </>
       ) : (
         <>
-          <AvatarImage src="/hormiguita_head_logo.png" alt="hormigüita assistant" />
           <AvatarFallback className="bg-muted-foreground/20">
-            <Bot className="h-5 w-5 text-accent" /> {/* Fallback if image fails */}
+            <Image width={90} height={90} src="/hormiguita_head_logo.png" alt="hormigüita assistant" />
           </AvatarFallback>
         </>
       )}
