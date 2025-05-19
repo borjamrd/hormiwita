@@ -1,4 +1,4 @@
-# **App Name**: FinanceFriend Chat
+# **App Name**: maspagüita Chat
 
 ## Core Features:
 

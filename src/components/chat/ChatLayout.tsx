@@ -20,7 +20,7 @@ export function ChatLayout({ messages, isLoadingAssistant, inputComponent }: Cha
       <CardHeader className="flex flex-row items-center justify-between p-4 border-b bg-card">
         <div className="flex items-center gap-3">
           <MessageSquareText className="h-7 w-7 text-primary" data-ai-hint="logo finance"/>
-          <h1 className="text-xl font-semibold text-foreground">FinanceFriend Chat</h1>
+          <h1 className="text-xl font-semibold text-foreground">maspagüita Chat</h1>
         </div>
         {/* Placeholder for future elements like settings or user avatar */}
       </CardHeader>
