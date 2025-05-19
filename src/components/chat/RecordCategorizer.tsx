@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import type { BankStatementSummary, ProviderTransactionSummary } from '@/ai/flows/analyze-bank-statements';
-import { categorizeFinancialData, type CategorizationInput, type CategorizedItem, type CategorizationOutput } from '@/ai/flows/categorize-financial-data';
+import { categorizeFinancialData, type CategorizationInput, type CategorizedItem } from '@/ai/flows/categorize-financial-data'; // Removed CategorizationOutput as it's not directly used here
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -11,8 +11,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import { BrainCircuit, Loader2 } from 'lucide-react'; // BrainCircuit for AI icon
+import { BrainCircuit, ListChecks, Loader2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface RecordCategorizerProps {
   analysisResult: BankStatementSummary;
@@ -91,12 +93,11 @@ const CategorizedAccordion: React.FC<{
   title: string;
   groupedData: Record<string, GroupedCategoryData>;
   currency: string | undefined;
-  itemType: 'income' | 'expense';
-}> = ({ title, groupedData, currency, itemType }) => {
+}> = ({ title, groupedData, currency }) => {
   if (Object.keys(groupedData).length === 0) {
     return <p className="text-sm text-muted-foreground px-1 py-2">No hay datos categorizados para {title.toLowerCase()}.</p>;
   }
-  const defaultOpenValue = Object.keys(groupedData)[0]; // Open first category by default
+  const defaultOpenValue = Object.keys(groupedData)[0];
   return (
     <div className="my-3">
       <h4 className="text-sm font-semibold mb-1.5 px-1">{title}</h4>
@@ -142,12 +143,14 @@ const CategorizedAccordion: React.FC<{
 
 
 export function RecordCategorizer({ analysisResult }: RecordCategorizerProps) {
-  const { incomeByProvider, expensesByProvider, totalIncome, totalExpenses, detectedCurrency, unassignedTransactions, feedback, status } = analysisResult;
+  const { incomeByProvider, expensesByProvider, totalIncome, totalExpenses, detectedCurrency, status } = analysisResult;
   const { toast } = useToast();
 
   const [categorizedIncomeItems, setCategorizedIncomeItems] = useState<CategorizedItem[] | null>(null);
   const [categorizedExpenseItems, setCategorizedExpenseItems] = useState<CategorizedItem[] | null>(null);
   const [isCategorizing, setIsCategorizing] = useState(false);
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+
 
   const groupAndSumByCategory = (items: CategorizedItem[] | null, itemType: 'income' | 'expense'): Record<string, GroupedCategoryData> => {
     if (!items) return {};
@@ -168,7 +171,7 @@ export function RecordCategorizer({ analysisResult }: RecordCategorizerProps) {
   const handleAutocategorize = async () => {
     if (!analysisResult) return;
     setIsCategorizing(true);
-    setCategorizedIncomeItems(null); // Reset previous results
+    setCategorizedIncomeItems(null);
     setCategorizedExpenseItems(null);
 
     try {
@@ -224,33 +227,33 @@ export function RecordCategorizer({ analysisResult }: RecordCategorizerProps) {
   const showCategorizedView = categorizedIncomeItems !== null || categorizedExpenseItems !== null;
 
   return (
-    <div className="flex flex-col md:flex-row gap-3 md:gap-4 max-h-[calc(100vh-250px)] md:max-h-[calc(100vh-180px)] p-1">
-      
-      <Card className="flex flex-col md:w-1/2 overflow-hidden">
-        <CardHeader className="p-3">
-          <CardTitle className="text-base">Resumen del Análisis</CardTitle>
-          { (totalIncome !== undefined || totalExpenses !== undefined) &&
-            <CardDescription className="text-xs">
-                <span>Ingresos Totales: <strong className="text-green-600">{formatCurrency(totalIncome)}</strong></span>
-                <span className="mx-2">|</span>
-                <span>Gastos Totales: <strong className="text-red-600">{formatCurrency(totalExpenses)}</strong></span>
-                {unassignedTransactions !== undefined && unassignedTransactions > 0 && 
-                  <span className="mx-2">|</span> }
-                {unassignedTransactions !== undefined && unassignedTransactions > 0 && 
-                  <span>No Asignadas: <strong>{unassignedTransactions}</strong></span> }
-            </CardDescription>
-          }
-        </CardHeader>
-        <CardContent className="p-0 flex-1 overflow-hidden">
-          <ScrollArea className="h-full p-3 pt-0">
-            {showCategorizedView ? (
-              <>
-                <CategorizedAccordion title="Ingresos Categorizados" groupedData={groupedCategorizedIncome} currency={detectedCurrency} itemType="income" />
-                <Separator className="my-3" />
-                <CategorizedAccordion title="Gastos Categorizados" groupedData={groupedCategorizedExpenses} currency={detectedCurrency} itemType="expense" />
-              </>
-            ) : (
-              <>
+    <Card className="flex flex-col w-full h-full overflow-hidden">
+      <CardHeader className="p-3">
+        <CardTitle className="text-base">Análisis y Categorización de Extractos</CardTitle>
+        { (totalIncome !== undefined || totalExpenses !== undefined) &&
+          <CardDescription className="text-xs">
+              <span>Ingresos Totales: <strong className="text-green-600">{formatCurrency(totalIncome)}</strong></span>
+              <span className="mx-2">|</span>
+              <span>Gastos Totales: <strong className="text-red-600">{formatCurrency(totalExpenses)}</strong></span>
+              {analysisResult.unassignedTransactions !== undefined && analysisResult.unassignedTransactions > 0 && 
+                <>
+                  <span className="mx-2">|</span>
+                  <span>No Asignadas: <strong>{analysisResult.unassignedTransactions}</strong></span>
+                </>
+              }
+          </CardDescription>
+        }
+      </CardHeader>
+      <CardContent className="p-0 flex-1 overflow-hidden">
+        <ScrollArea className="h-full p-3 pt-0">
+          {showCategorizedView ? (
+            <>
+              <CategorizedAccordion title="Ingresos Categorizados" groupedData={groupedCategorizedIncome} currency={detectedCurrency} />
+              <Separator className="my-3" />
+              <CategorizedAccordion title="Gastos Categorizados" groupedData={groupedCategorizedExpenses} currency={detectedCurrency} />
+            </>
+          ) : (
+             <>
                 <ProviderTable title="Ingresos por Pagador" data={incomeByProvider} currency={detectedCurrency} />
                 <Separator className="my-3" />
                 <ProviderTable title="Gastos por Beneficiario" data={expensesByProvider} currency={detectedCurrency} />
@@ -258,48 +261,62 @@ export function RecordCategorizer({ analysisResult }: RecordCategorizerProps) {
                     <p className="text-sm text-muted-foreground p-2 text-center">No se identificaron transacciones detalladas por proveedor.</p>
                 )}
               </>
-            )}
-          </ScrollArea>
-        </CardContent>
-         <CardFooter className="p-2 border-t">
-            <Button onClick={handleAutocategorize} disabled={isCategorizing || status === "Error Parsing" || status === "No Data Identified"} className="w-full text-xs h-8">
-                {isCategorizing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
-                Autocategorizar
-            </Button>
-        </CardFooter>
-      </Card>
-
-      <div className="flex flex-col flex-1 md:w-1/2 md:h-full gap-3 md:gap-4 overflow-hidden">
-        <Card className="flex flex-col overflow-hidden max-h-[15.625rem]">
-          <CardHeader className="p-3">
-            <CardTitle className="text-base">Categorías de Gastos (Referencia)</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0 flex-1 overflow-hidden">
-            <ScrollArea className="h-full p-3 pt-0">
-              <div className="space-y-1.5">
-                {expenseCategoriesDefault.map((category, index) => (
-                  <Badge key={index} variant="outline" className="mr-1.5 mb-1.5 text-xs font-normal">{category}</Badge>
-                ))}
-              </div>
-            </ScrollArea>
-          </CardContent>
-        </Card>
-
-        <Card className="flex flex-col overflow-hidden max-h-[15.625rem]">
-          <CardHeader className="p-3">
-            <CardTitle className="text-base">Categorías de Ingresos (Referencia)</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0 flex-1 overflow-hidden">
-            <ScrollArea className="h-full p-3 pt-0">
-              <div className="space-y-1.5">
-                {incomeCategoriesDefault.map((category, index) => (
-                  <Badge key={index} variant="outline" className="mr-1.5 mb-1.5 text-xs font-normal">{category}</Badge>
-                ))}
-              </div>
-            </ScrollArea>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+          )}
+        </ScrollArea>
+      </CardContent>
+      <CardFooter className="p-2 border-t flex items-center justify-center gap-2">
+          <Button 
+            onClick={handleAutocategorize} 
+            disabled={isCategorizing || status === "Error Parsing" || status === "No Data Identified"} 
+            className="flex-1 text-xs h-8"
+          >
+              {isCategorizing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
+              Autocategorizar
+          </Button>
+          <Dialog open={isCategoryModalOpen} onOpenChange={setIsCategoryModalOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="flex-1 text-xs h-8">
+                <ListChecks className="mr-2 h-4 w-4" />
+                Ver Categorías de Referencia
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[600px] h-[70vh] flex flex-col">
+              <DialogHeader>
+                <DialogTitle>Categorías de Referencia</DialogTitle>
+              </DialogHeader>
+              <Tabs defaultValue="expenses" className="flex-1 flex flex-col overflow-hidden">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="expenses">Gastos</TabsTrigger>
+                  <TabsTrigger value="income">Ingresos</TabsTrigger>
+                </TabsList>
+                <TabsContent value="expenses" className="flex-1 overflow-hidden mt-2">
+                  <ScrollArea className="h-full p-1 pr-3">
+                    <div className="space-y-1">
+                      {expenseCategoriesDefault.map((category, index) => (
+                        <Badge key={`exp-${index}`} variant="outline" className="mr-1.5 mb-1.5 text-xs font-normal">{category}</Badge>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </TabsContent>
+                <TabsContent value="income" className="flex-1 overflow-hidden mt-2">
+                  <ScrollArea className="h-full p-1 pr-3">
+                    <div className="space-y-1">
+                      {incomeCategoriesDefault.map((category, index) => (
+                        <Badge key={`inc-${index}`} variant="outline" className="mr-1.5 mb-1.5 text-xs font-normal">{category}</Badge>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </TabsContent>
+              </Tabs>
+               <DialogClose asChild className="mt-4">
+                <Button type="button" variant="outline">Cerrar</Button>
+              </DialogClose>
+            </DialogContent>
+          </Dialog>
+      </CardFooter>
+    </Card>
   );
 }
+
+
+    
