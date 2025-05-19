@@ -35,45 +35,48 @@ const GenerateChatResponseInputSchema = z.object({
 });
 export type GenerateChatResponseInput = z.infer<typeof GenerateChatResponseInputSchema>;
 
-// Define output schema for the main flow
+// Define output schema for the main flow (this remains the contract for the calling function)
 const GenerateChatResponseOutputSchema = z.object({
   response: z.string().describe('The chatbot response to the user query.'),
   updatedUserData: UserDataSchema.optional().describe('Updated user data after processing the query, including any newly extracted information.'),
 });
 export type GenerateChatResponseOutput = z.infer<typeof GenerateChatResponseOutputSchema>;
 
-// Tool to extract user's name
+// Tool to extract user's name (acts as a declaration for the LLM)
 const extractNameTool = ai.defineTool(
   {
     name: 'extractNameTool',
-    description: "Extracts the user's name if mentioned in the query. Use this tool if the user provides their name or introduces themselves.",
+    description: "A conceptual tool to guide the LLM. If the user provides their name or introduces themselves, the LLM should extract this name.",
     inputSchema: z.object({ query: z.string().describe("The user's message which might contain their name.") }),
     outputSchema: z.object({ name: z.string().optional().describe("The extracted name of the user.") }),
   },
   async (input) => {
-    // This is a placeholder for the LLM to fill.
+    // This placeholder implementation is NOT primarily used for extraction.
+    // The LLM is instructed to populate 'extractedName' in its main JSON output.
     return { name: undefined };
   }
 );
 
-// Tool to extract financial objectives
+// Tool to extract financial objectives (acts as a declaration for the LLM)
 const extractObjectivesTool = ai.defineTool(
   {
     name: 'extractObjectivesTool',
-    description: "Extracts a list of financial objectives if mentioned in the query. Use this tool if the user discusses their financial goals or what they want to achieve.",
+    description: "A conceptual tool to guide the LLM. If the user discusses their financial goals or what they want to achieve, the LLM should extract these objectives.",
     inputSchema: z.object({ query: z.string().describe("The user's message which might contain their financial objectives.") }),
     outputSchema: z.object({ objectives: z.array(z.string()).optional().describe("A list of extracted financial objectives.") }),
   },
   async (input) => {
-    // Placeholder for LLM to fill.
+    // This placeholder implementation is NOT primarily used for extraction.
+    // The LLM is instructed to populate 'extractedObjectives' in its main JSON output.
     return { objectives: undefined };
   }
 );
 
-// Schema to workaround model returning an object for a string output
-const ModelWorkaroundOutputSchema = z.object({
-  description: GenerateChatResponseOutputSchema.shape.response, // This is z.string().describe('The chatbot response...')
-  type: z.string().optional().describe("An optional type field, often 'string', sometimes output by the model."),
+// Schema for the direct output from the LLM prompt
+const PromptOutputSchema = z.object({
+  textResponse: z.string().describe('The chatbot response to the user query.'),
+  extractedName: z.string().optional().describe("The user's name, if extracted in the current turn based on user input and extractNameTool guidance."),
+  extractedObjectives: z.array(z.string()).optional().describe("Financial objectives, if extracted in the current turn based on user input and extractObjectivesTool guidance."),
 });
 
 
@@ -84,25 +87,25 @@ export async function generateChatResponse(input: GenerateChatResponseInput): Pr
 const systemPrompt = `Eres FinanceFriend, un asistente experto en finanzas personales. Tu objetivo principal es ayudar al usuario a organizar sus finanzas. Para ello, necesitas recopilar información en las siguientes categorías: información personal (nombre), objetivos financieros, relación de gastos e ingresos, información adicional y, finalmente, generar un resumen.
 
 Sigue este orden para recopilar la información:
-1.  **Información Personal**: Si aún no conoces el nombre del usuario (es decir, \`userData.name\` no está presente o está vacío), tu primera prioridad es preguntarle su nombre. Utiliza la herramienta \`extractNameTool\` si el usuario provee su nombre en la respuesta. Ejemplo de pregunta: 'Hola! Para comenzar y dirigirnos mejor, ¿podrías decirme tu nombre?'.
-2.  **Objetivos Financieros**: Una vez que tengas el nombre del usuario (es decir, \`userData.name\` está presente) y si aún no conoces sus objetivos (es decir, \`userData.objectives\` no está presente o está vacío), pregúntale sobre sus principales objetivos financieros. Utiliza la herramienta \`extractObjectivesTool\` si el usuario provee sus objetivos. Ejemplo de pregunta: 'Gracias, {{userData.name}}. Ahora, cuéntame, ¿cuáles son tus principales objetivos financieros en este momento?'.
-3.  **Conversación General**: Si ya tienes el nombre y los objetivos, o si el usuario hace una pregunta general sobre finanzas no relacionada con la recopilación de datos, responde a su consulta de manera útil y concisa.
+1.  **Información Personal**: Si aún no conoces el nombre del usuario (es decir, \`userData.name\` no está presente o está vacío), tu primera prioridad es preguntarle su nombre. Si el usuario provee su nombre en la respuesta, extráelo y colócalo en el campo \`extractedName\` de tu respuesta JSON. Ejemplo de pregunta: 'Hola! Para comenzar y dirigirnos mejor, ¿podrías decirme tu nombre?'.
+2.  **Objetivos Financieros**: Una vez que tengas el nombre del usuario (es decir, \`userData.name\` está presente) y si aún no conoces sus objetivos (es decir, \`userData.objectives\` no está presente o está vacío), pregúntale sobre sus principales objetivos financieros. Si el usuario provee sus objetivos, extráelos como una lista de strings y colócalos en el campo \`extractedObjectives\` de tu respuesta JSON. Ejemplo de pregunta: 'Gracias, {{userData.name}}. Ahora, cuéntame, ¿cuáles son tus principales objetivos financieros en este momento?'.
+3.  **Conversación General**: Si ya tienes el nombre y los objetivos, o si el usuario hace una pregunta general sobre finanzas no relacionada con la recopilación de datos, responde a su consulta de manera útil y concisa en el campo \`textResponse\`.
 
 Instrucciones adicionales:
 - Siempre responde en español.
 - Mantén las respuestas por debajo de 200 palabras.
 - Evita dar recomendaciones de inversión directas.
-- Utiliza las herramientas \`extractNameTool\` y \`extractObjectivesTool\` ÚNICAMENTE cuando creas que el usuario ha proporcionado la información relevante para el nombre o los objetivos en su mensaje actual. No las uses para hacer preguntas.
-- Tu respuesta al usuario siempre debe ser un mensaje de chat directo. La información extraída por las herramientas se utilizará para actualizar un panel de información en la interfaz de usuario, no la incluyas directamente en tu respuesta de chat a menos que sea natural hacerlo (por ejemplo, para confirmar).
+- Guíate por las descripciones de las herramientas \`extractNameTool\` y \`extractObjectivesTool\` para saber cuándo y qué extraer, pero coloca los resultados en los campos \`extractedName\` y \`extractedObjectives\` de tu respuesta JSON principal. No intentes "llamar" a las herramientas de forma que esperes una respuesta de ellas; tú eres quien provee la información extraída.
+- Tu respuesta al usuario (\`textResponse\`) siempre debe ser un mensaje de chat directo. La información extraída se utilizará para actualizar un panel de información en la interfaz de usuario, no la incluyas directamente en tu respuesta de chat a menos que sea natural hacerlo (por ejemplo, para confirmar).
 - Revisa el \`chatHistory\` y \`userData\` para entender el contexto actual antes de responder.
-`;
+- Tu salida debe ser un objeto JSON que cumpla con el esquema proporcionado (PromptOutputSchema), conteniendo \`textResponse\`, y opcionalmente \`extractedName\` y/o \`extractedObjectives\`.`;
 
 const prompt = ai.definePrompt({
   name: 'generateChatResponsePrompt',
   system: systemPrompt,
-  tools: [extractNameTool, extractObjectivesTool],
+  tools: [extractNameTool, extractObjectivesTool], // Tools are still declared to inform the LLM
   input: { schema: GenerateChatResponseInputSchema },
-  output: { schema: ModelWorkaroundOutputSchema }, // Use the workaround schema here
+  output: { schema: PromptOutputSchema }, 
   prompt:
     `{{#if chatHistory}}
 Historial de chat reciente (assistant es FinanceFriend, user es el usuario):
@@ -118,7 +121,7 @@ Objetivos: {{#if userData.objectives}}{{#each userData.objectives}}- {{this}} {{
 Mensaje actual del usuario:
 user: {{query}}
 
-Respuesta de FinanceFriend (assistant):
+Respuesta JSON de FinanceFriend (assistant) cumpliendo con PromptOutputSchema:
 `,
 });
 
@@ -127,75 +130,68 @@ const generateChatResponseFlow = ai.defineFlow(
   {
     name: 'generateChatResponseFlow',
     inputSchema: GenerateChatResponseInputSchema,
-    outputSchema: GenerateChatResponseOutputSchema, // Flow output schema remains the same
+    outputSchema: GenerateChatResponseOutputSchema,
   },
   async (input) => {
-    const llmCallResult = await prompt(input); // llmCallResult is { output: ModelWorkaroundOutputSchema | undefined, response: GenerateResponse }
+    const llmCallResult = await prompt(input);
 
-    const chatResponseText = llmCallResult.output?.description;
+    const promptOutput = llmCallResult.output;
 
-    if (chatResponseText === undefined) {
-      console.error("LLM output object did not contain a 'description' field with the chat text:", llmCallResult.output);
-      // It's possible that if the model ONLY calls a tool and doesn't provide text, .output might be undefined.
-      // In such a scenario, we might need a default response or handle it differently.
-      // For now, let's assume a text response is usually expected or the tool use implies a text response will also be generated.
-      // If not, the prompt might need adjustment to ensure it always provides a text response part.
-      // A more robust way if output can be undefined and no text is an error:
-      if (!llmCallResult.output || typeof llmCallResult.output.description !== 'string') {
-         console.error("LLM output was missing or malformed. Full result:", llmCallResult);
-         // Fallback response if the primary text generation fails or is missing.
-         // This could also happen if a tool is called and the model doesn't provide a text part.
-         const toolCalls = llmCallResult.response?.parts.filter(p => p.toolRequest).length || 0;
-         if (toolCalls > 0 && (!llmCallResult.output || !llmCallResult.output.description)) {
-            // If a tool was called, it's okay for the main text to be empty for now, tool processing will happen.
-            // The user might not see an immediate text response if the model decided only to use a tool.
-            // This might need further refinement based on desired UX.
-            console.log("Model primarily made tool calls, text response part might be absent or processed by tools.");
-         } else {
-            throw new Error("LLM output malformed, missing expected 'description' field for the chat response.");
-         }
+    if (!promptOutput || typeof promptOutput.textResponse !== 'string') {
+      console.error("LLM output was missing or malformed. Full result:", llmCallResult);
+      const toolCalls = llmCallResult.response?.parts.filter(p => p.toolRequest).length || 0;
+      if (toolCalls > 0 && (!promptOutput || !promptOutput.textResponse)) {
+          console.log("Model primarily made tool calls, text response part might be absent or processed by tools.");
+      } else {
+          throw new Error("LLM output malformed, missing expected 'textResponse' field for the chat response.");
       }
     }
+    
+    const chatResponseText = promptOutput?.textResponse || "No se pudo generar una respuesta de texto.";
 
-    let updatedName = input.userData?.name;
-    let updatedObjectives = input.userData?.objectives || [];
+    let cumulativeName = input.userData?.name;
+    let cumulativeObjectives = input.userData?.objectives || [];
 
-    // Iterate over parts from the raw response to find tool responses
-    if (llmCallResult.response && llmCallResult.response.parts) {
-      for (const part of llmCallResult.response.parts) {
-        if (part.toolResponse) {
-          if (part.toolResponse.name === 'extractNameTool' && part.toolResponse.output?.name) {
-             updatedName = part.toolResponse.output.name as string;
-          }
-          if (part.toolResponse.name === 'extractObjectivesTool' && part.toolResponse.output?.objectives) {
-             const newObjectives = part.toolResponse.output.objectives as string[];
-             // Avoid duplicates
-             updatedObjectives = Array.from(new Set([...(updatedObjectives || []), ...newObjectives]));
-          }
-        }
-      }
+    if (promptOutput?.extractedName) {
+      cumulativeName = promptOutput.extractedName;
+    }
+    if (promptOutput?.extractedObjectives && promptOutput.extractedObjectives.length > 0) {
+      const newObjectives = promptOutput.extractedObjectives;
+      // Accumulate objectives, avoiding duplicates
+      cumulativeObjectives = Array.from(new Set([...cumulativeObjectives, ...newObjectives]));
     }
     
     const finalUserData: UserData = {
-      name: updatedName,
-      objectives: updatedObjectives.length > 0 ? updatedObjectives : undefined,
+      name: cumulativeName,
+      objectives: cumulativeObjectives.length > 0 ? cumulativeObjectives : undefined,
     };
     
-    const shouldIncludeUserData = (finalUserData.name && finalUserData.name !== input.userData?.name) || 
-                                 (finalUserData.objectives && finalUserData.objectives.some(obj => !(input.userData?.objectives || []).includes(obj))) ||
-                                 ((input.userData?.objectives || []).length !== (finalUserData.objectives || []).length) ||
-                                 (!input.userData && (finalUserData.name || finalUserData.objectives));
+    // Determine if userData has actually changed to decide if it should be included in the output
+    const nameIsNewOrChanged = finalUserData.name !== input.userData?.name;
+    
+    const objectivesWereProvided = finalUserData.objectives && finalUserData.objectives.length > 0;
+    const oldObjectivesWerePresent = input.userData?.objectives && input.userData.objectives.length > 0;
+    
+    let objectivesChanged = false;
+    if (objectivesWereProvided !== oldObjectivesWerePresent) {
+        objectivesChanged = true;
+    } else if (objectivesWereProvided && oldObjectivesWerePresent) {
+        // Both new and old objectives lists exist, check for content difference
+        const finalObjSet = new Set(finalUserData.objectives);
+        const inputObjSet = new Set(input.userData!.objectives);
+        objectivesChanged = finalUserData.objectives!.length !== input.userData!.objectives!.length ||
+                            !finalUserData.objectives!.every(obj => inputObjSet.has(obj)) ||
+                            !input.userData!.objectives!.every(obj => finalObjSet.has(obj));
+    }
 
+
+    const isInitialPopulation = !input.userData && (finalUserData.name || (finalUserData.objectives && finalUserData.objectives.length > 0));
+    
+    const shouldIncludeUserData = nameIsNewOrChanged || objectivesChanged || isInitialPopulation;
 
     return {
-      // Use chatResponseText, which could be undefined if an error was thrown or if only tool calls happened without direct text.
-      // If chatResponseText is legitimately undefined (e.g. only tool call), prompt might need to ensure a text part is always returned,
-      // or the UX needs to handle states where the bot is "thinking" or "acting" without immediate text.
-      // For now, if it's undefined due to earlier checks, it will pass undefined here.
-      // A safer fallback could be an empty string or a generic message if absolutely no text comes out.
-      response: chatResponseText || (llmCallResult.response?.text ?? "No text response generated."), // Provide a fallback if description is truly missing.
-      updatedUserData: shouldIncludeUserData ? finalUserData : (input.userData || {}),
+      response: chatResponseText,
+      updatedUserData: shouldIncludeUserData ? finalUserData : input.userData,
     };
   }
 );
-
