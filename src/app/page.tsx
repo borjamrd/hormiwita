@@ -7,7 +7,7 @@ import { ChatLayout } from '@/components/chat/ChatLayout';
 import { InfoPanel } from '@/components/info-panel/InfoPanel';
 import { ChatInput } from '@/components/chat/ChatInput';
 import { ObjectivesSelection } from '@/components/chat/ObjectivesSelection';
-import { UploadRecords } from '@/components/chat/UploadRecords'; // New component
+import { UploadRecords } from '@/components/chat/UploadRecords';
 import { generateChatResponse, type GenerateChatResponseInput, type UserData, type GenerateChatResponseOutput } from '@/ai/flows/generate-chat-response';
 import type { BankStatementSummary } from '@/ai/flows/analyze-bank-statements';
 import { useToast } from "@/hooks/use-toast";
@@ -137,24 +137,21 @@ export default function ChatPage() {
 
     try {
       const chatHistoryForFlow = currentMessages.slice(-10).map(msg => ({
-        role: msg.role === 'user' ? 'user' : 'assistant', // Ensure enum values are correct
+        role: msg.role === 'user' ? 'user' : 'assistant', 
         content: msg.content,
       }));
       
-      // Crucial: Pass the *current* userData state to the flow
       const flowInput: GenerateChatResponseInput = {
         query: content,
         chatHistory: chatHistoryForFlow,
-        userData: userData, // Pass the most recent userData
+        userData: userData, 
       };
 
       const aiResponse = await generateChatResponse(flowInput);
 
       if (aiResponse.updatedUserData) {
-         // Merge new data with existing, ensuring not to overwrite if a field is undefined in updatedUserData but present in prevData
         setUserData(prevData => {
             const newData = { ...prevData, ...aiResponse.updatedUserData };
-            // Ensure arrays are not accidentally set to undefined if they were previously populated and AI didn't touch them
             if (aiResponse.updatedUserData?.generalObjectives === undefined && prevData.generalObjectives) {
                 newData.generalObjectives = prevData.generalObjectives;
             }
@@ -216,14 +213,12 @@ export default function ChatPage() {
   };
   
   const handleAnalysisConfirmed = async (summary: BankStatementSummary) => {
-    // Update userData with the summary immediately
     setUserData(prevData => ({
       ...prevData,
       expensesIncomeSummary: summary,
     }));
 
     const summaryMessage = `He subido mis extractos. El feedback del análisis es: "${summary.feedback}" (Estado: ${summary.status}).`;
-    // This will then trigger the AI to acknowledge and potentially move to the next step
     await handleSendMessage(summaryMessage);
   };
 
@@ -285,7 +280,7 @@ export default function ChatPage() {
             inputComponent={inputComponentToRender()}
           />
         </div>
-        <div className="md:col-span-1 h-full md:h-[700px] overflow-y-auto flex flex-col gap-4">
+        <div className="md:col-span-1 h-full flex flex-col"> {/* Removed overflow-y-auto, md:h-[700px], and gap-4 */}
           <InfoPanel userData={userData} />
         </div>
       </div>
