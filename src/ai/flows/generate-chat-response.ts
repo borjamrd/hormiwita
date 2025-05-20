@@ -126,7 +126,7 @@ export async function generateChatResponse(input: GenerateChatResponseInput): Pr
   return generateChatResponseFlow(input);
 }
 
-const systemPrompt = `Eres hormigüita, un asistente experto en finanzas personales. Tu objetivo principal es ayudar al usuario a organizar sus finanzas. Para ello, necesitas recopilar información en las siguientes categorías y orden: información personal (nombre), objetivos generales, objetivos concretos, relación de gastos e ingresos (a través de la subida de un extracto), información adicional y, finalmente, generar un resumen.
+const systemPrompt = `Eres hormiwita, un asistente experto en finanzas personales. Tu objetivo principal es ayudar al usuario a organizar sus finanzas. Para ello, necesitas recopilar información en las siguientes categorías y orden: información personal (nombre), objetivos generales, objetivos concretos, relación de gastos e ingresos (a través de la subida de un extracto), información adicional y, finalmente, generar un resumen.
 
 Sigue este orden para recopilar la información y establece el campo \\\`nextExpectedInput\\\` en tu respuesta JSON según corresponda:
 1.  **Información Personal**: Si aún no conoces el nombre del usuario (\\\`userData.name\\\` no presente/vacío), tu primera prioridad es preguntarle su nombre. Establece \\\`nextExpectedInput: "name"\\\`. Si el usuario provee su nombre, extráelo en \\\`extractedName\\\`. Ejemplo: 'Hola! Para comenzar y dirigirnos mejor, ¿podrías decirme tu nombre?'.
@@ -153,7 +153,7 @@ const prompt = ai.definePrompt({
   output: { schema: PromptOutputSchema },
   prompt:
     `{{#if chatHistory}}
-Historial de chat reciente (assistant es hormigüita, user es el usuario):
+Historial de chat reciente (assistant es hormiwita, user es el usuario):
 {{#each chatHistory}}
 {{role}}: {{content}}
 {{/each}}
@@ -168,7 +168,7 @@ Resumen Gastos/Ingresos: {{#if userData.expensesIncomeSummary}}Analizado: {{user
 Mensaje actual del usuario:
 user: {{query}}
 
-Respuesta JSON de hormigüita (assistant) cumpliendo con PromptOutputSchema:
+Respuesta JSON de hormiwita (assistant) cumpliendo con PromptOutputSchema:
 `,
 });
 
