@@ -18,7 +18,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface RecordCategorizerProps {
   analysisResult: BankStatementSummary;
-  onCategorizationComplete: (success: boolean) => void; // Nueva prop
+  onCategorizationComplete: (success: boolean) => void;
+  onCategorizationDataUpdate: (data: { income: CategorizedItem[] | null, expenses: CategorizedItem[] | null }) => void;
 }
 
 const expenseCategoriesDefault: string[] = [
@@ -90,7 +91,8 @@ const ProviderTable: React.FC<{ title: string; data: ProviderTransactionSummary[
   );
 };
 
-const CategorizedAccordion: React.FC<{
+// This component is now also used by InfoPanel's modal, so ensure it's flexible enough or consider exporting it.
+export const CategorizedAccordion: React.FC<{
   title: string;
   groupedData: Record<string, GroupedCategoryData>;
   currency: string | undefined;
@@ -143,7 +145,7 @@ const CategorizedAccordion: React.FC<{
 };
 
 
-export function RecordCategorizer({ analysisResult, onCategorizationComplete }: RecordCategorizerProps) {
+export function RecordCategorizer({ analysisResult, onCategorizationComplete, onCategorizationDataUpdate }: RecordCategorizerProps) {
   const { incomeByProvider, expensesByProvider, totalIncome, totalExpenses, detectedCurrency, status } = analysisResult;
   const { toast } = useToast();
 
@@ -153,11 +155,11 @@ export function RecordCategorizer({ analysisResult, onCategorizationComplete }: 
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
 
   useEffect(() => {
-    // Reset categorized state if analysisResult changes (e.g., new file)
     setCategorizedIncomeItems(null);
     setCategorizedExpenseItems(null);
     onCategorizationComplete(false);
-  }, [analysisResult, onCategorizationComplete]);
+    onCategorizationDataUpdate({ income: null, expenses: null });
+  }, [analysisResult, onCategorizationComplete, onCategorizationDataUpdate]);
 
 
   const groupAndSumByCategory = (items: CategorizedItem[] | null, itemType: 'income' | 'expense'): Record<string, GroupedCategoryData> => {
@@ -179,12 +181,13 @@ export function RecordCategorizer({ analysisResult, onCategorizationComplete }: 
   const handleAutocategorize = async () => {
     if (!analysisResult) return;
     setIsCategorizing(true);
-    // No reseteamos aquí los items, solo el estado de completado
     onCategorizationComplete(false); 
 
     let success = false;
+    let finalIncomeItems: CategorizedItem[] = [];
+    let finalExpenseItems: CategorizedItem[] = [];
+
     try {
-      let finalIncomeItems: CategorizedItem[] = [];
       if (analysisResult.incomeByProvider && analysisResult.incomeByProvider.length > 0) {
         const incomeInput: CategorizationInput = {
           itemsToCategorize: analysisResult.incomeByProvider,
@@ -197,7 +200,6 @@ export function RecordCategorizer({ analysisResult, onCategorizationComplete }: 
       }
       setCategorizedIncomeItems(finalIncomeItems);
 
-      let finalExpenseItems: CategorizedItem[] = [];
       if (analysisResult.expensesByProvider && analysisResult.expensesByProvider.length > 0) {
         const expenseInput: CategorizationInput = {
           itemsToCategorize: analysisResult.expensesByProvider,
@@ -210,8 +212,8 @@ export function RecordCategorizer({ analysisResult, onCategorizationComplete }: 
       }
       setCategorizedExpenseItems(finalExpenseItems);
       
-      // Consider categorization successful if the process ran, even if no items were categorized (empty arrays)
       success = true; 
+      onCategorizationDataUpdate({ income: finalIncomeItems, expenses: finalExpenseItems });
 
       toast({
         title: "Autocategorización Completada",
@@ -229,7 +231,7 @@ export function RecordCategorizer({ analysisResult, onCategorizationComplete }: 
       });
     } finally {
       setIsCategorizing(false);
-      onCategorizationComplete(success); // Informar si la categorización fue exitosa o no
+      onCategorizationComplete(success); 
     }
   };
 
@@ -281,7 +283,7 @@ export function RecordCategorizer({ analysisResult, onCategorizationComplete }: 
       <CardFooter className="p-2 border-t flex items-center justify-center gap-2">
           <Button 
             onClick={handleAutocategorize} 
-            disabled={isCategorizing || status === "Error Parsing" || status === "No Data Identified"} 
+            disabled={isCategorizing || status === "Error Parsing" || status === "No Data Identified" || status === "Unsupported File Type"} 
             className="flex-1 text-xs h-8"
           >
               {isCategorizing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}

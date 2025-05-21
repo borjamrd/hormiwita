@@ -23,8 +23,9 @@ export function ChatLayout({ messages, isLoadingAssistant, inputComponent }: Cha
           <Image 
             src="/hormiguita_logo.png" 
             alt="hormiwita logo" 
-            width={36} // Adjust width as needed
-            height={36} // Adjust height as needed
+            className='-m-5'
+            width={106} // Adjust width as needed
+            height={106} // Adjust height as needed
             priority // Optional: if logo is critical for LCP
           />
           <h1 className="text-xl font-semibold text-foreground">hormiwita</h1>
