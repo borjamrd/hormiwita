@@ -227,42 +227,6 @@ const generateChatResponseFlow = ai.defineFlow(
     const chatResponseText = promptOutput.textResponse;
     let finalNextExpectedInput = promptOutput.nextExpectedInput || "general_conversation";
 
-    // --- Safety net to prevent asking for data out of order or if already present ---
-    const { name, generalObjectives, specificObjectives, expensesIncomeSummary } = input.userData || {};
-
-    if (finalNextExpectedInput === "name" && name) {
-      finalNextExpectedInput = "general_objectives_selection"; 
-    }
-    
-    if (finalNextExpectedInput === "general_objectives_selection" && !name) {
-      finalNextExpectedInput = "name";
-    } else if (finalNextExpectedInput === "general_objectives_selection" && (generalObjectives && generalObjectives.length > 0)) {
-      finalNextExpectedInput = "specific_objectives_selection"; 
-    }
-    
-    if (finalNextExpectedInput === "specific_objectives_selection" && !(generalObjectives && generalObjectives.length > 0)) {
-      finalNextExpectedInput = "general_objectives_selection";
-    } else if (finalNextExpectedInput === "specific_objectives_selection" && (specificObjectives && specificObjectives.length > 0)) {
-      finalNextExpectedInput = "expense_income_upload"; 
-    }
-    
-    if (finalNextExpectedInput === "expense_income_upload" && 
-               !(name && (generalObjectives && generalObjectives.length > 0) && (specificObjectives && specificObjectives.length > 0))) {
-      if (!(specificObjectives && specificObjectives.length > 0)) {
-        finalNextExpectedInput = "specific_objectives_selection";
-      } else if (!(generalObjectives && generalObjectives.length > 0)) {
-        finalNextExpectedInput = "general_objectives_selection";
-      } else { 
-        finalNextExpectedInput = "name";
-      }
-    } else if (finalNextExpectedInput === "expense_income_upload" && expensesIncomeSummary) {
-        finalNextExpectedInput = "summary_display"; 
-    }
-
-    if (finalNextExpectedInput === "summary_display" && !expensesIncomeSummary) {
-        finalNextExpectedInput = "expense_income_upload";
-    }
-    // --- End of safety net ---
 
     let cumulativeName = input.userData?.name;
     let cumulativeGeneralObjectives = input.userData?.generalObjectives || [];
