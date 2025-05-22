@@ -65,7 +65,6 @@ const UserDataSchema = z.object({
   generalObjectives: z.array(z.string()).optional().describe("A list of the user's general financial objectives."),
   specificObjectives: z.array(z.string()).optional().describe("A list of the user's specific financial objectives, related to their general ones."),
   expensesIncomeSummary: EnhancedExpenseIncomeSummarySchema.optional().describe("Summary of user's expenses and income from uploaded statements, including original analysis and categorized items."),
-  // Removed: additionalInfo: z.string().optional().describe("Información financiera adicional proporcionada por el usuario."),
 });
 export type UserData = z.infer<typeof UserDataSchema>;
 
@@ -85,9 +84,8 @@ const GenerateChatResponseOutputSchema = z.object({
       "name", 
       "general_objectives_selection", 
       "specific_objectives_selection", 
-      "expense_income_upload", 
-      // Removed: "additional_info_discussion", 
-      // Removed: "summary_display",
+      "expense_income_upload",
+      "summary_display", 
       "general_conversation"
     ]).optional().describe("Hint for the frontend on what kind of input is expected next.")
 });
@@ -96,17 +94,15 @@ export type GenerateChatResponseOutput = z.infer<typeof GenerateChatResponseOutp
 // Schema for the direct output from the LLM prompt
 const PromptOutputSchema = z.object({
   textResponse: z.string().describe('The chatbot response to the user query.'),
-  extractedName: z.string().nullable().optional().describe("The user's name, if extracted in the current turn."),
-  extractedGeneralObjectives: z.array(z.string()).nullable().optional().describe("General financial objectives, if extracted."),
-  extractedSpecificObjectives: z.array(z.string()).nullable().optional().describe("Specific financial objectives, if extracted."),
-  // Removed: extractedAdditionalInfo: z.string().nullable().optional().describe("Additional financial information, if extracted."),
+  extractedName: z.string().nullable().optional().describe("The user's name, if extracted in the current turn based on user input and extractNameTool guidance."),
+  extractedGeneralObjectives: z.array(z.string()).nullable().optional().describe("General financial objectives, if extracted in the current turn based on user input and extractGeneralObjectivesTool guidance."),
+  extractedSpecificObjectives: z.array(z.string()).nullable().optional().describe("Specific financial objectives, if extracted in the current turn based on user input and extractSpecificObjectivesTool guidance."),
   nextExpectedInput: z.enum([
       "name", 
       "general_objectives_selection", 
       "specific_objectives_selection", 
       "expense_income_upload", 
-      // Removed: "additional_info_discussion",
-      // Removed: "summary_display", 
+      "summary_display", 
       "general_conversation"
     ]).optional().describe("Indicates the type of input the AI is expecting next.")
 });
@@ -115,17 +111,17 @@ const PromptOutputSchema = z.object({
 const extractNameTool = ai.defineTool(
   {
     name: 'extractNameTool',
-    description: "Extracts the user's name if they provide it.",
+    description: "Extracts the user's name if they provide it. This tool helps understand if the user's message contains their name.",
     inputSchema: z.object({ query: z.string() }),
     outputSchema: z.object({ name: z.string().optional() }),
   },
-  async (input) => ({ name: undefined }) // Conceptual
+  async (input) => ({ name: undefined }) // Conceptual: Actual extraction is done by LLM into PromptOutputSchema.extractedName
 );
 
 const extractGeneralObjectivesTool = ai.defineTool(
   {
     name: 'extractGeneralObjectivesTool',
-    description: "Extracts general financial objectives if the user states them.",
+    description: "Extracts general financial objectives if the user states them. This tool helps understand if the user's message contains general objectives.",
     inputSchema: z.object({ query: z.string() }),
     outputSchema: z.object({ generalObjectives: z.array(z.string()).optional() }),
   },
@@ -135,7 +131,7 @@ const extractGeneralObjectivesTool = ai.defineTool(
 const extractSpecificObjectivesTool = ai.defineTool(
   {
     name: 'extractSpecificObjectivesTool',
-    description: "Extracts specific financial objectives if the user states them.",
+    description: "Extracts specific financial objectives if the user states them. This tool helps understand if the user's message contains specific objectives.",
     inputSchema: z.object({ query: z.string() }),
     outputSchema: z.object({ specificObjectives: z.array(z.string()).optional() }),
   },
@@ -145,36 +141,35 @@ const extractSpecificObjectivesTool = ai.defineTool(
 const acknowledgeExpenseIncomeSummaryTool = ai.defineTool(
   {
     name: 'acknowledgeExpenseIncomeSummaryTool',
-    description: "Acknowledges when the user confirms their expense/income summary has been processed. The actual summary data is passed in userData.",
-    inputSchema: z.object({ query: z.string() }), 
-    outputSchema: z.object({ acknowledged: z.boolean().optional() }),
+    description: "This tool is used when the user confirms that their expense/income summary (provided by an external analysis) has been processed and they are communicating this confirmation back to the chatbot. The actual summary data is already present in `userData.expensesIncomeSummary`.",
+    inputSchema: z.object({ query: z.string().describe("The user's message confirming the bank statement analysis, which typically includes the feedback from that analysis.") }), 
+    outputSchema: z.object({ acknowledged: z.boolean().optional().describe("True if the user's message is a confirmation of the bank statement analysis.") }),
   },
-  async (input) => ({ acknowledged: true }) // Conceptual
+  async (input) => ({ acknowledged: true }) // Conceptual: The LLM uses this tool's description to understand the user's intent.
 );
-
-// Removed: extractAdditionalInfoTool
 
 
 export async function generateChatResponse(input: GenerateChatResponseInput): Promise<GenerateChatResponseOutput> {
   return generateChatResponseFlow(input);
 }
 
-const systemPrompt = `Eres hormiwita, un asistente experto en finanzas personales. Tu objetivo principal es ayudar al usuario a organizar sus finanzas. Para ello, necesitas recopilar información en las siguientes categorías y orden: información personal (nombre), objetivos generales, objetivos concretos, relación de gastos e ingresos (a través de la subida de un extracto).
+const systemPrompt = `Eres hormiwita, un asistente experto en finanzas personales. Tu objetivo principal es ayudar al usuario a organizar sus finanzas. Para ello, necesitas recopilar información en las siguientes categorías y orden: información personal (nombre), objetivos generales, objetivos concretos, relación de gastos e ingresos (a través de la subida de un extracto), y finalmente presentar un resumen para confirmación.
 
 Sigue este orden para recopilar la información y establece el campo \`nextExpectedInput\` en tu respuesta JSON según corresponda:
 1.  **Información Personal**: Si aún no conoces el nombre del usuario (\`userData.name\` no presente/vacío), tu primera prioridad es preguntarle su nombre. Establece \`nextExpectedInput: "name"\`. Si el usuario provee su nombre, extráelo en \`extractedName\`. Ejemplo: 'Hola! Para comenzar y dirigirnos mejor, ¿podrías decirme tu nombre?'.
 2.  **Objetivos Generales**: Con el nombre (\`userData.name\` presente) y sin objetivos generales (\`userData.generalObjectives\` no presente/vacío), pregúntale por ellos. Establece \`nextExpectedInput: "general_objectives_selection"\`. Si los provee, extráelos en \`extractedGeneralObjectives\`. Ejemplo: 'Gracias, {{userData.name}}. Ahora, ¿cuáles son tus principales objetivos financieros generales?'.
 3.  **Objetivos Concretos**: Con objetivos generales (\`userData.generalObjectives\` presente/no vacío) y sin objetivos concretos (\`userData.specificObjectives\` no presente/vacío), pregúntale por ellos, relacionados con los generales. Establece \`nextExpectedInput: "specific_objectives_selection"\`. Si los provee, extráelos en \`extractedSpecificObjectives\`. Ejemplo: 'Entendido. Dentro de Ahorro, ¿tienes objetivos más específicos?'.
-4.  **Relación de Gastos e Ingresos**: Con nombre, objetivos generales y concretos presentes, y si \`userData.expensesIncomeSummary\` no está presente, es el momento de pedir al usuario que suba sus extractos bancarios. Establece \`nextExpectedInput: "expense_income_upload"\`. Ejemplo: 'Genial. Para entender mejor tu situación actual, por favor, sube un extracto bancario reciente (Excel o CSV). Esto nos ayudará a analizar tus gastos e ingresos.' No intentes analizar el archivo directamente aquí. Solo pide que lo suban. Una vez que el usuario confirme la subida y el análisis (enviando un mensaje como "He confirmado el análisis de mis extractos. El feedback es: [feedback_del_analisis_original]"), acusa recibo de ese resumen y considera este paso completado. Luego, pasa a la conversación general.
-5.  **Conversación General**: Si ya tienes toda la información (nombre, objetivos generales, objetivos concretos y el resumen de gastos/ingresos ha sido confirmado), o si el usuario hace una pregunta general en cualquier momento, responde útilmente. Establece \`nextExpectedInput: "general_conversation"\`.
+4.  **Relación de Gastos e Ingresos**: Con nombre, objetivos generales y concretos presentes, y si \`userData.expensesIncomeSummary\` no está presente, es el momento de pedir al usuario que suba sus extractos bancarios. Establece \`nextExpectedInput: "expense_income_upload"\`. Ejemplo: 'Genial. Para entender mejor tu situación actual, por favor, sube un extracto bancario reciente (Excel o CSV). Esto nos ayudará a analizar tus gastos e ingresos.' No intentes analizar el archivo directamente aquí. Solo pide que lo suban. Cuando el usuario envíe un mensaje confirmando el análisis de sus extractos (este mensaje contendrá frases como 'He confirmado el análisis' y mencionará el feedback del análisis, que es procesado por \`acknowledgeExpenseIncomeSummaryTool\`), tu respuesta de texto DEBE acusar recibo de esa confirmación, y OBLIGATORIAMENTE DEBES establecer \`nextExpectedInput: "summary_display"\` en tu respuesta JSON. Tu respuesta de texto podría ser, por ejemplo: 'Entendido, gracias por confirmar el análisis. Antes de continuar, revisemos la información que hemos recopilado.'.
+5.  **Confirmación del Resumen**: Este paso es activado por el frontend cuando \`nextExpectedInput\` es `"summary_display"`. El frontend mostrará un resumen de toda la información (\`userData\`). El usuario responderá aceptando ("He aceptado el resumen") o pidiendo modificar (lo que reiniciará el chat). Si el usuario acepta, tu respuesta de texto debe confirmar y pasar a la conversación general. Establece \`nextExpectedInput: "general_conversation"\`.
+6.  **Conversación General**: Si ya tienes toda la información confirmada, o si el usuario hace una pregunta general en cualquier momento, responde útilmente. Establece \`nextExpectedInput: "general_conversation"\`.
 
 Instrucciones adicionales:
 - Siempre responde en español.
-- Mantén las respuestas por debajo de 200 palabras.
+- Mantén las respuestas concisas.
 - Evita dar recomendaciones de inversión directas.
-- Usa las herramientas conceptuales para guiar la extracción, pero los datos extraídos deben ir en los campos \`extractedName\`, \`extractedGeneralObjectives\`, \`extractedSpecificObjectives\` de tu respuesta JSON. El \`expensesIncomeSummary\` vendrá de \`userData\`.
+- Usa las herramientas conceptuales (\`extractNameTool\`, \`extractGeneralObjectivesTool\`, \`extractSpecificObjectivesTool\`, \`acknowledgeExpenseIncomeSummaryTool\`) para guiar la extracción, pero los datos extraídos deben ir en los campos \`extractedName\`, \`extractedGeneralObjectives\`, \`extractedSpecificObjectives\` de tu respuesta JSON principal. El \`expensesIncomeSummary\` vendrá de \`userData\`.
 - Tu respuesta al usuario (\`textResponse\`) siempre debe ser un mensaje de chat directo.
-- Revisa \`chatHistory\` y \`userData\` para el contexto.
+- Revisa \`chatHistory\` y \`userData\` para el contexto. No vuelvas a pedir información que ya tengas a menos que el usuario indique que quiere modificarla.
 - Tu salida debe ser un objeto JSON que cumpla con \`PromptOutputSchema\`.`;
 
 const prompt = ai.definePrompt({
@@ -185,7 +180,6 @@ const prompt = ai.definePrompt({
     extractGeneralObjectivesTool, 
     extractSpecificObjectivesTool, 
     acknowledgeExpenseIncomeSummaryTool,
-    // Removed: extractAdditionalInfoTool
   ],
   input: { schema: GenerateChatResponseInputSchema },
   output: { schema: PromptOutputSchema },
@@ -202,7 +196,6 @@ Nombre: {{#if userData.name}}{{userData.name}}{{else}}No proporcionado{{/if}}
 Objetivos Generales: {{#if userData.generalObjectives}}{{#each userData.generalObjectives}}- {{this}} {{/each}}{{else}}No proporcionados{{/if}}
 Objetivos Concretos: {{#if userData.specificObjectives}}{{#each userData.specificObjectives}}- {{this}} {{/each}}{{else}}No proporcionados{{/if}}
 Resumen Gastos/Ingresos: {{#if userData.expensesIncomeSummary}}Analizado (Feedback Original: {{userData.expensesIncomeSummary.originalSummary.feedback}}){{else}}No proporcionado{{/if}}
-{{!-- Removed additionalInfo from prompt context --}}
 
 Mensaje actual del usuario:
 user: {{query}}
@@ -221,59 +214,98 @@ const generateChatResponseFlow = ai.defineFlow(
   async (input) => {
     const llmCallResult = await prompt(input);
     const promptOutput = llmCallResult.output;
-
+    
     if (!promptOutput || typeof promptOutput.textResponse !== 'string') {
       console.error("LLM output was missing or malformed. Full result:", JSON.stringify(llmCallResult, null, 2));
+       return {
+        response: "Lo siento, tuve un problema al procesar mi respuesta. Por favor, intenta de nuevo.",
+        updatedUserData: input.userData, 
+        nextExpectedInput: "general_conversation", 
+      };
+    }
+        
+    const chatResponseText = promptOutput.textResponse;
+    let finalNextExpectedInput = promptOutput.nextExpectedInput || "general_conversation";
+
+    // --- Safety net to prevent asking for data out of order or if already present ---
+    const { name, generalObjectives, specificObjectives, expensesIncomeSummary } = input.userData || {};
+
+    if (finalNextExpectedInput === "name" && name) {
+      finalNextExpectedInput = "general_objectives_selection"; 
     }
     
-    const chatResponseText = promptOutput?.textResponse || "No se pudo generar una respuesta de texto.";
-    const nextExpectedInput = promptOutput?.nextExpectedInput || "general_conversation";
+    if (finalNextExpectedInput === "general_objectives_selection" && !name) {
+      finalNextExpectedInput = "name";
+    } else if (finalNextExpectedInput === "general_objectives_selection" && (generalObjectives && generalObjectives.length > 0)) {
+      finalNextExpectedInput = "specific_objectives_selection"; 
+    }
+    
+    if (finalNextExpectedInput === "specific_objectives_selection" && !(generalObjectives && generalObjectives.length > 0)) {
+      finalNextExpectedInput = "general_objectives_selection";
+    } else if (finalNextExpectedInput === "specific_objectives_selection" && (specificObjectives && specificObjectives.length > 0)) {
+      finalNextExpectedInput = "expense_income_upload"; 
+    }
+    
+    if (finalNextExpectedInput === "expense_income_upload" && 
+               !(name && (generalObjectives && generalObjectives.length > 0) && (specificObjectives && specificObjectives.length > 0))) {
+      if (!(specificObjectives && specificObjectives.length > 0)) {
+        finalNextExpectedInput = "specific_objectives_selection";
+      } else if (!(generalObjectives && generalObjectives.length > 0)) {
+        finalNextExpectedInput = "general_objectives_selection";
+      } else { 
+        finalNextExpectedInput = "name";
+      }
+    } else if (finalNextExpectedInput === "expense_income_upload" && expensesIncomeSummary) {
+        finalNextExpectedInput = "summary_display"; 
+    }
+
+    if (finalNextExpectedInput === "summary_display" && !expensesIncomeSummary) {
+        finalNextExpectedInput = "expense_income_upload";
+    }
+    // --- End of safety net ---
 
     let cumulativeName = input.userData?.name;
     let cumulativeGeneralObjectives = input.userData?.generalObjectives || [];
     let cumulativeSpecificObjectives = input.userData?.specificObjectives || [];
-    let cumulativeExpensesIncomeSummary = input.userData?.expensesIncomeSummary; 
-    // Removed: cumulativeAdditionalInfo
-
-    if (promptOutput?.extractedName) {
+    
+    if (promptOutput.extractedName) {
       cumulativeName = promptOutput.extractedName;
     }
-    if (promptOutput?.extractedGeneralObjectives && promptOutput.extractedGeneralObjectives.length > 0) {
-      cumulativeGeneralObjectives = Array.from(new Set([...cumulativeGeneralObjectives, ...promptOutput.extractedGeneralObjectives]));
+    if (promptOutput.extractedGeneralObjectives && promptOutput.extractedGeneralObjectives.length > 0) {
+      const newGeneral = promptOutput.extractedGeneralObjectives.filter(obj => !cumulativeGeneralObjectives.includes(obj));
+      cumulativeGeneralObjectives = [...cumulativeGeneralObjectives, ...newGeneral];
     }
-    if (promptOutput?.extractedSpecificObjectives && promptOutput.extractedSpecificObjectives.length > 0) {
-      cumulativeSpecificObjectives = Array.from(new Set([...cumulativeSpecificObjectives, ...promptOutput.extractedSpecificObjectives]));
+    if (promptOutput.extractedSpecificObjectives && promptOutput.extractedSpecificObjectives.length > 0) {
+      const newSpecific = promptOutput.extractedSpecificObjectives.filter(obj => !cumulativeSpecificObjectives.includes(obj));
+      cumulativeSpecificObjectives = [...cumulativeSpecificObjectives, ...newSpecific];
     }
-    // Removed: extractedAdditionalInfo handling
 
     const finalUserData: UserData = {
       name: cumulativeName,
       generalObjectives: cumulativeGeneralObjectives.length > 0 ? cumulativeGeneralObjectives : undefined,
       specificObjectives: cumulativeSpecificObjectives.length > 0 ? cumulativeSpecificObjectives : undefined,
-      expensesIncomeSummary: cumulativeExpensesIncomeSummary,
-      // Removed: additionalInfo field
+      expensesIncomeSummary: input.userData?.expensesIncomeSummary, 
     };
     
     const nameChanged = finalUserData.name !== input.userData?.name;
     const generalObjectivesChanged = JSON.stringify(finalUserData.generalObjectives) !== JSON.stringify(input.userData?.generalObjectives);
     const specificObjectivesChanged = JSON.stringify(finalUserData.specificObjectives) !== JSON.stringify(input.userData?.specificObjectives);
-    const expensesIncomeSummaryChanged = JSON.stringify(finalUserData.expensesIncomeSummary) !== JSON.stringify(input.userData?.expensesIncomeSummary);
-    // Removed: additionalInfoChanged
     
     const isInitialPopulation = !input.userData && 
       (finalUserData.name || 
        finalUserData.generalObjectives?.length || 
-       finalUserData.specificObjectives?.length || 
-       finalUserData.expensesIncomeSummary
-       // Removed: finalUserData.additionalInfo
+       finalUserData.specificObjectives?.length
       );
     
-    const shouldIncludeUserData = nameChanged || generalObjectivesChanged || specificObjectivesChanged || expensesIncomeSummaryChanged /* Removed: || additionalInfoChanged */ || isInitialPopulation;
+    const shouldIncludeUserData = nameChanged || generalObjectivesChanged || specificObjectivesChanged || isInitialPopulation;
 
     return {
       response: chatResponseText,
-      updatedUserData: shouldIncludeUserData ? finalUserData : input.userData,
-      nextExpectedInput: nextExpectedInput,
+      updatedUserData: shouldIncludeUserData ? finalUserData : input.userData, 
+      nextExpectedInput: finalNextExpectedInput,
     };
   }
 );
+
+
+    
