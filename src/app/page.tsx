@@ -8,7 +8,7 @@ import { InfoPanel } from '@/components/info-panel/InfoPanel';
 import { ChatInput } from '@/components/chat/ChatInput';
 import { ObjectivesSelection } from '@/components/chat/ObjectivesSelection';
 import { UploadRecords } from '@/components/chat/UploadRecords';
-// Removed: import { SummaryDisplay } from '@/components/chat/SummaryDisplay';
+import { ConfirmOnboarding } from '@/components/chat/ConfirmOnboarding'; 
 import { 
   generateChatResponse, 
   type GenerateChatResponseInput, 
@@ -49,7 +49,6 @@ const initialUserData: UserData = {
   generalObjectives: [], 
   specificObjectives: [], 
   expensesIncomeSummary: undefined,
-  // Removed: additionalInfo: undefined,
 };
 
 
@@ -63,7 +62,7 @@ export default function ChatPage() {
   const showGeneralObjectivesSelection = useMemo(() => nextInputHint === 'general_objectives_selection' && !isLoadingAssistant, [nextInputHint, isLoadingAssistant]);
   const showSpecificObjectivesSelection = useMemo(() => nextInputHint === 'specific_objectives_selection' && !isLoadingAssistant && (userData.generalObjectives?.length || 0) > 0, [nextInputHint, isLoadingAssistant, userData.generalObjectives]);
   const showUploadRecords = useMemo(() => nextInputHint === 'expense_income_upload' && !isLoadingAssistant, [nextInputHint, isLoadingAssistant]);
-  // Removed: const showSummaryDisplay = useMemo(() => nextInputHint === 'summary_display' && !isLoadingAssistant, [nextInputHint, isLoadingAssistant]);
+  const showConfirmOnboarding = useMemo(() => nextInputHint === 'summary_display' && !isLoadingAssistant, [nextInputHint, isLoadingAssistant]);
 
 
   const triggerInitialAIQuery = useCallback(async () => {
@@ -93,7 +92,7 @@ export default function ChatPage() {
       setMessages([assistantMessage]);
 
       if (aiResponse.updatedUserData) {
-        setUserData(prevData => ({ ...prevData, ...aiResponse.updatedUserData }));
+        setUserData(aiResponse.updatedUserData);
       }
       setNextInputHint(aiResponse.nextExpectedInput || 'general_conversation');
 
@@ -120,7 +119,7 @@ export default function ChatPage() {
   }, [triggerInitialAIQuery]);
 
 
-  const handleSendMessage = async (content: string) => {
+  const handleSendMessage = async (content: string, currentUserDataOverride?: UserData) => {
     const userMessage: ChatMessage = {
       id: crypto.randomUUID(),
       role: 'user',
@@ -130,7 +129,7 @@ export default function ChatPage() {
     const currentMessages = [...messages, userMessage];
     setMessages(currentMessages);
     setIsLoadingAssistant(true);
-    setNextInputHint('general_conversation');
+    setNextInputHint('general_conversation'); // Default to general conversation while waiting
 
 
     try {
@@ -142,26 +141,13 @@ export default function ChatPage() {
       const flowInput: GenerateChatResponseInput = {
         query: content,
         chatHistory: chatHistoryForFlow,
-        userData: userData, 
+        userData: currentUserDataOverride || userData, 
       };
 
       const aiResponse = await generateChatResponse(flowInput);
 
       if (aiResponse.updatedUserData) {
-        setUserData(prevData => {
-            const newData = { ...prevData, ...aiResponse.updatedUserData };
-            if (aiResponse.updatedUserData?.generalObjectives === undefined && prevData.generalObjectives) {
-                newData.generalObjectives = prevData.generalObjectives;
-            }
-            if (aiResponse.updatedUserData?.specificObjectives === undefined && prevData.specificObjectives) {
-                newData.specificObjectives = prevData.specificObjectives;
-            }
-            if (aiResponse.updatedUserData?.expensesIncomeSummary === undefined && prevData.expensesIncomeSummary) {
-                newData.expensesIncomeSummary = prevData.expensesIncomeSummary;
-            }
-            // Removed: additionalInfo handling
-            return newData;
-        });
+         setUserData(aiResponse.updatedUserData);
       }
       setNextInputHint(aiResponse.nextExpectedInput || 'general_conversation'); 
 
@@ -212,15 +198,25 @@ export default function ChatPage() {
   };
   
   const handleAnalysisConfirmed = async (summary: EnhancedExpenseIncomeSummary) => {
-    setUserData(prevData => ({
-      ...prevData,
+    const newUserData = {
+      ...userData,
       expensesIncomeSummary: summary,
-    }));
+    };
+    setUserData(newUserData);
     const summaryMessage = `He confirmado el análisis de mis extractos. El feedback del análisis es: "${summary.originalSummary.feedback}" (Estado: ${summary.originalSummary.status}).`;
-    await handleSendMessage(summaryMessage);
+    // Pass newUserData directly to ensure the AI flow has the latest information
+    await handleSendMessage(summaryMessage, newUserData); 
   };
 
-  // Removed: handleAcceptSummary
+  const handleAcceptSummary = async () => {
+    toast({
+      title: "Información Confirmada",
+      description: "Continuemos con el plan.",
+      variant: "default"
+    });
+    await handleSendMessage("He aceptado el resumen de la información.");
+    // AI should set nextInputHint to 'general_conversation'
+  };
 
   const handleResetChat = async () => {
     toast({
@@ -249,7 +245,8 @@ export default function ChatPage() {
   const currentSpecificOptions = useMemo(() => getSpecificObjectiveOptions(userData.generalObjectives), [userData.generalObjectives]);
 
   const inputComponentToRender = () => {
-    if (isLoadingAssistant && (showGeneralObjectivesSelection || showSpecificObjectivesSelection || showUploadRecords /* Removed: || showSummaryDisplay */)) {
+    if (isLoadingAssistant && (showGeneralObjectivesSelection || showSpecificObjectivesSelection || showUploadRecords || showConfirmOnboarding)) {
+      // While loading, if a special input was expected, show a disabled chat input
       return <ChatInput onSendMessage={() => {}} isLoading={true} />;
     }
 
@@ -277,7 +274,16 @@ export default function ChatPage() {
         />
       );
     }
-    // Removed: SummaryDisplay case
+    if (showConfirmOnboarding) {
+      return (
+        <ConfirmOnboarding
+          userData={userData}
+          onAccept={handleAcceptSummary}
+          onCancel={handleResetChat}
+          isLoading={isLoadingAssistant}
+        />
+      );
+    }
     return (
       <ChatInput
         onSendMessage={(msg) => handleSendMessage(msg)}
