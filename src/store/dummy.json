@@ -1,0 +1,1179 @@
+{
+  "name": "Borja",
+  "generalObjectives": [
+    "Ahorro",
+    "Reducción",
+    "Gestión de Deuda"
+  ],
+  "specificObjectives": [
+    "Ahorro para la Compra de un Vehículo",
+    "Ahorro para Inversiones"
+  ],
+  "expensesIncomeSummary": {
+    "originalSummary": {
+      "feedback": "Extracto de 'export2025519.xls' analizado correctamente. Se identificó un ingreso total de 6952.81 y gastos totales de 6799.37 en EUR. El desglose detallado por proveedor está disponible.",
+      "status": "Success",
+      "detectedCurrency": "EUR",
+      "expensesByProvider": [
+        {
+          "providerName": "Maureen Hall",
+          "totalAmount": 3425.23,
+          "transactionCount": 3
+        },
+        {
+          "providerName": "Colleen Edwards",
+          "totalAmount": 3498.4,
+          "transactionCount": 5
+        },
+        {
+          "providerName": "Kayla Buchanan",
+          "totalAmount": 13.25,
+          "transactionCount": 4
+        },
+        {
+          "providerName": "Courtney Welch",
+          "totalAmount": 4465.2,
+          "transactionCount": 3
+        },
+        {
+          "providerName": "Jonathan Stone",
+          "totalAmount": 1867.93,
+          "transactionCount": 5
+        },
+        {
+          "providerName": "Wesley Stephens",
+          "totalAmount": 3689.54,
+          "transactionCount": 4
+        },
+        {
+          "providerName": "Tony Brown",
+          "totalAmount": 3198.04,
+          "transactionCount": 5
+        },
+        {
+          "providerName": "Lisa Phillips",
+          "totalAmount": 861.84,
+          "transactionCount": 4
+        },
+        {
+          "providerName": "Robert Wallace MD",
+          "totalAmount": 3513.34,
+          "transactionCount": 4
+        },
+        {
+          "providerName": "Angela Phillips",
+          "totalAmount": 1528.15,
+          "transactionCount": 5
+        },
+        {
+          "providerName": "Tiffany Padilla",
+          "totalAmount": 4759.61,
+          "transactionCount": 4
+        },
+        {
+          "providerName": "Jill Spencer",
+          "totalAmount": 1413.83,
+          "transactionCount": 4
+        },
+        {
+          "providerName": "Randy Ward",
+          "totalAmount": 1865.97,
+          "transactionCount": 5
+        },
+        {
+          "providerName": "David Griffin",
+          "totalAmount": 2738.83,
+          "transactionCount": 1
+        },
+        {
+          "providerName": "Diane Green",
+          "totalAmount": 3138.32,
+          "transactionCount": 2
+        },
+        {
+          "providerName": "Joshua York",
+          "totalAmount": 4603.22,
+          "transactionCount": 3
+        },
+        {
+          "providerName": "Jeffery Walters",
+          "totalAmount": 3769.48,
+          "transactionCount": 1
+        },
+        {
+          "providerName": "Heather Stanley",
+          "totalAmount": 1607.42,
+          "transactionCount": 2
+        },
+        {
+          "providerName": "Hannah Holmes",
+          "totalAmount": 3009.1,
+          "transactionCount": 4
+        },
+        {
+          "providerName": "Tyler Snyder",
+          "totalAmount": 1691.61,
+          "transactionCount": 5
+        },
+        {
+          "providerName": "Shelley Richardson",
+          "totalAmount": 3961.44,
+          "transactionCount": 5
+        },
+        {
+          "providerName": "Tina Lewis",
+          "totalAmount": 4461.3,
+          "transactionCount": 4
+        },
+        {
+          "providerName": "Natalie Higgins",
+          "totalAmount": 1856.94,
+          "transactionCount": 1
+        },
+        {
+          "providerName": "Stacy English",
+          "totalAmount": 2888.6,
+          "transactionCount": 4
+        },
+        {
+          "providerName": "Tiffany Smith",
+          "totalAmount": 816.93,
+          "transactionCount": 3
+        },
+        {
+          "providerName": "Cindy Navarro",
+          "totalAmount": 455.54,
+          "transactionCount": 5
+        },
+        {
+          "providerName": "Theodore Scott",
+          "totalAmount": 1100.22,
+          "transactionCount": 4
+        },
+        {
+          "providerName": "Joseph Murray",
+          "totalAmount": 1980.49,
+          "transactionCount": 3
+        },
+        {
+          "providerName": "Jason Hughes",
+          "totalAmount": 4629.42,
+          "transactionCount": 2
+        },
+        {
+          "providerName": "Tiffany Potter",
+          "totalAmount": 4676.52,
+          "transactionCount": 1
+        },
+        {
+          "providerName": "Jose Wright",
+          "totalAmount": 2675.88,
+          "transactionCount": 3
+        },
+        {
+          "providerName": "Melvin Riggs",
+          "totalAmount": 1507.22,
+          "transactionCount": 1
+        },
+        {
+          "providerName": "Jeffrey Arias",
+          "totalAmount": 889.35,
+          "transactionCount": 1
+        },
+        {
+          "providerName": "Jessica Gray",
+          "totalAmount": 2524.8,
+          "transactionCount": 2
+        },
+        {
+          "providerName": "Derek Martin",
+          "totalAmount": 905.89,
+          "transactionCount": 5
+        },
+        {
+          "providerName": "Brenda Davis",
+          "totalAmount": 4877.38,
+          "transactionCount": 1
+        },
+        {
+          "providerName": "Katherine Powell",
+          "totalAmount": 4363.61,
+          "transactionCount": 2
+        },
+        {
+          "providerName": "Megan Jones",
+          "totalAmount": 3628.84,
+          "transactionCount": 5
+        },
+        {
+          "providerName": "Timothy Santana",
+          "totalAmount": 2591.64,
+          "transactionCount": 2
+        },
+        {
+          "providerName": "Meagan Murphy",
+          "totalAmount": 239.18,
+          "transactionCount": 5
+        },
+        {
+          "providerName": "Sarah Frost",
+          "totalAmount": 2668.47,
+          "transactionCount": 5
+        },
+        {
+          "providerName": "Beth Nelson",
+          "totalAmount": 4510.94,
+          "transactionCount": 2
+        },
+        {
+          "providerName": "Samantha Anderson",
+          "totalAmount": 4340.63,
+          "transactionCount": 1
+        },
+        {
+          "providerName": "April King",
+          "totalAmount": 1398.97,
+          "transactionCount": 3
+        },
+        {
+          "providerName": "Bryan Robbins",
+          "totalAmount": 332.88,
+          "transactionCount": 5
+        },
+        {
+          "providerName": "Christopher Howell",
+          "totalAmount": 3012.62,
+          "transactionCount": 1
+        },
+        {
+          "providerName": "Mr. Christopher Johnson",
+          "totalAmount": 3797.96,
+          "transactionCount": 3
+        },
+        {
+          "providerName": "Kristy Cook",
+          "totalAmount": 1587.68,
+          "transactionCount": 1
+        },
+        {
+          "providerName": "Todd Meza",
+          "totalAmount": 1362.11,
+          "transactionCount": 1
+        },
+        {
+          "providerName": "Micheal Lynn",
+          "totalAmount": 2915.43,
+          "transactionCount": 3
+        },
+        {
+          "providerName": "David Harris",
+          "totalAmount": 2255.02,
+          "transactionCount": 5
+        },
+        {
+          "providerName": "Dr. Joseph Brown",
+          "totalAmount": 189.19,
+          "transactionCount": 3
+        },
+        {
+          "providerName": "Megan Mason",
+          "totalAmount": 882.49,
+          "transactionCount": 5
+        },
+        {
+          "providerName": "Zachary Guzman",
+          "totalAmount": 4478.87,
+          "transactionCount": 2
+        },
+        {
+          "providerName": "Kyle Freeman",
+          "totalAmount": 3703.07,
+          "transactionCount": 1
+        },
+        {
+          "providerName": "Karen Andrews",
+          "totalAmount": 2412.05,
+          "transactionCount": 2
+        },
+        {
+          "providerName": "Tiffany Moore",
+          "totalAmount": 4592.53,
+          "transactionCount": 2
+        },
+        {
+          "providerName": "Clinton Jones",
+          "totalAmount": 2483.73,
+          "transactionCount": 3
+        },
+        {
+          "providerName": "Jason Caldwell",
+          "totalAmount": 3434.33,
+          "transactionCount": 2
+        },
+        {
+          "providerName": "Shane Ball",
+          "totalAmount": 4215.49,
+          "transactionCount": 4
+        },
+        {
+          "providerName": "Jay Barron",
+          "totalAmount": 691.63,
+          "transactionCount": 2
+        },
+        {
+          "providerName": "Kelsey Holland",
+          "totalAmount": 2257.23,
+          "transactionCount": 1
+        },
+        {
+          "providerName": "Elizabeth Cooper",
+          "totalAmount": 705.53,
+          "transactionCount": 5
+        },
+        {
+          "providerName": "Lisa Serrano PhD",
+          "totalAmount": 192.53,
+          "transactionCount": 1
+        },
+        {
+          "providerName": "Carl Mason MD",
+          "totalAmount": 1809.12,
+          "transactionCount": 5
+        },
+        {
+          "providerName": "Anne Norton",
+          "totalAmount": 4795.65,
+          "transactionCount": 4
+        },
+        {
+          "providerName": "Julie Kent",
+          "totalAmount": 3880.33,
+          "transactionCount": 1
+        },
+        {
+          "providerName": "Mrs. Sharon Vazquez MD",
+          "totalAmount": 2572.15,
+          "transactionCount": 5
+        },
+        {
+          "providerName": "Eric Ingram",
+          "totalAmount": 3596.39,
+          "transactionCount": 4
+        },
+        {
+          "providerName": "Kendra Ortiz",
+          "totalAmount": 771.44,
+          "transactionCount": 1
+        },
+        {
+          "providerName": "Kathryn Dickson",
+          "totalAmount": 4721.79,
+          "transactionCount": 3
+        },
+        {
+          "providerName": "Joy Cook",
+          "totalAmount": 2298.6,
+          "transactionCount": 4
+        },
+        {
+          "providerName": "Joshua Smith",
+          "totalAmount": 3905.31,
+          "transactionCount": 4
+        },
+        {
+          "providerName": "Jeffery Stone",
+          "totalAmount": 4512.95,
+          "transactionCount": 2
+        },
+        {
+          "providerName": "Jessica Wilson",
+          "totalAmount": 416.19,
+          "transactionCount": 2
+        },
+        {
+          "providerName": "Tracy Miller",
+          "totalAmount": 3911.43,
+          "transactionCount": 2
+        },
+        {
+          "providerName": "Karen Hobbs",
+          "totalAmount": 4507.93,
+          "transactionCount": 1
+        },
+        {
+          "providerName": "Karla Diaz",
+          "totalAmount": 1083.41,
+          "transactionCount": 3
+        },
+        {
+          "providerName": "Nicole Bernard",
+          "totalAmount": 4236.11,
+          "transactionCount": 5
+        },
+        {
+          "providerName": "Robin Johnson",
+          "totalAmount": 833.29,
+          "transactionCount": 1
+        },
+        {
+          "providerName": "Mark Richardson",
+          "totalAmount": 2308.87,
+          "transactionCount": 3
+        },
+        {
+          "providerName": "Cheryl Kelly",
+          "totalAmount": 1990.51,
+          "transactionCount": 4
+        }
+      ],
+      "incomeByProvider": [
+        {
+          "providerName": "Allison Gill",
+          "totalAmount": 39.76,
+          "transactionCount": 5
+        },
+        {
+          "providerName": "Mr. Bryan Levy",
+          "totalAmount": 3875.08,
+          "transactionCount": 1
+        },
+        {
+          "providerName": "Anthony Bell",
+          "totalAmount": 1459.77,
+          "transactionCount": 1
+        },
+        {
+          "providerName": "Samantha Taylor",
+          "totalAmount": 2145.1,
+          "transactionCount": 1
+        },
+        {
+          "providerName": "Ashley Castro",
+          "totalAmount": 805.11,
+          "transactionCount": 2
+        },
+        {
+          "providerName": "Jeremiah Harmon",
+          "totalAmount": 1975.9,
+          "transactionCount": 5
+        },
+        {
+          "providerName": "Jennifer Martin",
+          "totalAmount": 3348.1,
+          "transactionCount": 2
+        },
+        {
+          "providerName": "Elizabeth Murphy",
+          "totalAmount": 3239.7,
+          "transactionCount": 5
+        },
+        {
+          "providerName": "Richard Ramos",
+          "totalAmount": 1064.04,
+          "transactionCount": 5
+        },
+        {
+          "providerName": "Christopher Choi",
+          "totalAmount": 3074.66,
+          "transactionCount": 1
+        },
+        {
+          "providerName": "Debra Martinez",
+          "totalAmount": 11.38,
+          "transactionCount": 3
+        },
+        {
+          "providerName": "Kristin Powers",
+          "totalAmount": 4320.6,
+          "transactionCount": 5
+        },
+        {
+          "providerName": "Kenneth Horn",
+          "totalAmount": 4891.28,
+          "transactionCount": 1
+        },
+        {
+          "providerName": "Linda Perry",
+          "totalAmount": 2242.68,
+          "transactionCount": 3
+        },
+        {
+          "providerName": "Brent Mason",
+          "totalAmount": 4388.16,
+          "transactionCount": 3
+        },
+        {
+          "providerName": "Gregory Pugh",
+          "totalAmount": 3252.38,
+          "transactionCount": 1
+        },
+        {
+          "providerName": "Jason Fletcher",
+          "totalAmount": 1541.25,
+          "transactionCount": 3
+        },
+        {
+          "providerName": "Judy Berry",
+          "totalAmount": 2252.61,
+          "transactionCount": 1
+        },
+        {
+          "providerName": "Dawn Martin",
+          "totalAmount": 4072.49,
+          "transactionCount": 2
+        },
+        {
+          "providerName": "Michelle Bailey",
+          "totalAmount": 4741.56,
+          "transactionCount": 5
+        },
+        {
+          "providerName": "Samantha Lawrence",
+          "totalAmount": 2672.16,
+          "transactionCount": 4
+        },
+        {
+          "providerName": "Samuel Knight",
+          "totalAmount": 4000.13,
+          "transactionCount": 2
+        },
+        {
+          "providerName": "John Kim DVM",
+          "totalAmount": 4402.09,
+          "transactionCount": 2
+        }
+      ],
+      "totalExpenses": 216262.35,
+      "totalIncome": 63815.99,
+      "unassignedTransactions": 0
+    },
+    "categorizedIncomeItems": [
+      {
+        "providerName": "Ricardo Munoz Ruiz Dana",
+        "suggestedCategory": "Regalos y Transferencias Recibidas",
+        "totalAmount": 36,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Maria Del Pilar Soldado Rodriguez",
+        "suggestedCategory": "Regalos y Transferencias Recibidas",
+        "totalAmount": 250,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Stripe",
+        "suggestedCategory": "Trabajo Autónomo / Freelance",
+        "totalAmount": 624.79,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Patricia Munoz Ruiz Dana",
+        "suggestedCategory": "Regalos y Transferencias Recibidas",
+        "totalAmount": 27,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Carlos Munoz Ruiz Dana",
+        "suggestedCategory": "Regalos y Transferencias Recibidas",
+        "totalAmount": 16,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Emilio Jesus Garcia Romero",
+        "suggestedCategory": "Regalos y Transferencias Recibidas",
+        "totalAmount": 15,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Ivan Munoz Manas",
+        "suggestedCategory": "Regalos y Transferencias Recibidas",
+        "totalAmount": 13.1,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Jose Belmonte Gomez",
+        "suggestedCategory": "Regalos y Transferencias Recibidas",
+        "totalAmount": 16.55,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Francisco Jose Calvache Gisbert",
+        "suggestedCategory": "Regalos y Transferencias Recibidas",
+        "totalAmount": 14.5,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Vahagn Hayrapetyan Shashikyan",
+        "suggestedCategory": "Regalos y Transferencias Recibidas",
+        "totalAmount": 34.25,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Alejandro Ortiz Zurita",
+        "suggestedCategory": "Regalos y Transferencias Recibidas",
+        "totalAmount": 29,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Santiago Lozano Gutierrez",
+        "suggestedCategory": "Regalos y Transferencias Recibidas",
+        "totalAmount": 20.9,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Atmira Espacio De Consultoria S.l.",
+        "suggestedCategory": "Trabajo Autónomo / Freelance",
+        "totalAmount": 6218.21,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Fernando Paunero Ruiz Dana",
+        "suggestedCategory": "Regalos y Transferencias Recibidas",
+        "totalAmount": 16.65,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Borja Munoz Ruiz Dana",
+        "suggestedCategory": "Regalos y Transferencias Recibidas",
+        "totalAmount": 5220.82,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Andres Francisco Marcano Bethencourt",
+        "suggestedCategory": "Regalos y Transferencias Recibidas",
+        "totalAmount": 5.3,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Aurora Gallardo Osuna",
+        "suggestedCategory": "Regalos y Transferencias Recibidas",
+        "totalAmount": 4,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Ingreso En Cuenta Desde Tarjetas",
+        "suggestedCategory": "Otros Ingresos",
+        "totalAmount": 330,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Raquel Torre Pulido",
+        "suggestedCategory": "Regalos y Transferencias Recibidas",
+        "totalAmount": 10,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Kabir Chetwani Kaknani",
+        "suggestedCategory": "Regalos y Transferencias Recibidas",
+        "totalAmount": 10,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Bryan Fabricio Vasquez Garcia",
+        "suggestedCategory": "Regalos y Transferencias Recibidas",
+        "totalAmount": 10,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Ines Xi Pena Pando",
+        "suggestedCategory": "Regalos y Transferencias Recibidas",
+        "totalAmount": 10,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Sanchez Rodriguez Juan Manuel",
+        "suggestedCategory": "Nómina / Salario",
+        "totalAmount": 1600,
+        "transactionCount": 1
+      }
+    ],
+    "categorizedExpenseItems": [
+      {
+        "providerName": "Akira Shi",
+        "suggestedCategory": "Restaurantes y Ocio: Restaurantes y Cafés",
+        "totalAmount": 46.7,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Jaime Gianni",
+        "suggestedCategory": "Restaurantes y Ocio: Restaurantes y Cafés",
+        "totalAmount": 12.95,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Los Jartibles H",
+        "suggestedCategory": "Restaurantes y Ocio: Restaurantes y Cafés",
+        "totalAmount": 9.8,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Mas Go Carlos V",
+        "suggestedCategory": "Alimentación: Supermercado y Comestibles",
+        "totalAmount": 52.58,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Damaris Abigail Valle Rodriguez",
+        "suggestedCategory": "Otros Gastos",
+        "totalAmount": 20,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Host Gonz Y Val",
+        "suggestedCategory": "Restaurantes y Ocio: Bares y Copas",
+        "totalAmount": 9,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Tussam Feria",
+        "suggestedCategory": "Transporte: Transporte Público",
+        "totalAmount": 19.5,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Borja Muñoz Ruiz-dana",
+        "suggestedCategory": "Otros Gastos",
+        "totalAmount": 309,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Galos Cmi S.l",
+        "suggestedCategory": "Otros Gastos",
+        "totalAmount": 8,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Myheritage.com",
+        "suggestedCategory": "Restaurantes y Ocio: Hobbies y Aficiones",
+        "totalAmount": 33,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "El Bombin San P",
+        "suggestedCategory": "Restaurantes y Ocio: Restaurantes y Cafés",
+        "totalAmount": 56.11,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Xpecado",
+        "suggestedCategory": "Restaurantes y Ocio: Comida a Domicilio / Para Llevar",
+        "totalAmount": 16.55,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Sportbox San Bernardo",
+        "suggestedCategory": "Salud y Bienestar: Gimnasio / Actividades Deportivas",
+        "totalAmount": 129.98,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Indexa Mas Rentabilidad Acciones F.p.",
+        "suggestedCategory": "Finanzas: Transferencias a Ahorro/Inversión",
+        "totalAmount": 99,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Indexa Mas Rentabilidad Bonos F.p.",
+        "suggestedCategory": "Finanzas: Transferencias a Ahorro/Inversión",
+        "totalAmount": 11,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Render.com",
+        "suggestedCategory": "Trabajo / Negocio: Software y Herramientas",
+        "totalAmount": 14.43,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Temu.com",
+        "suggestedCategory": "Compras: Grandes Almacenes",
+        "totalAmount": 65.18,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Floristeria Ver",
+        "suggestedCategory": "Regalos y Donaciones: Regalos",
+        "totalAmount": 20,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "S I Catedral De",
+        "suggestedCategory": "Otros Gastos",
+        "totalAmount": 21,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Patio San Jacin",
+        "suggestedCategory": "Restaurantes y Ocio: Restaurantes y Cafés",
+        "totalAmount": 32.6,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Centro De Estudios Velazquez S.a.",
+        "suggestedCategory": "Educación: Cursos y Formación",
+        "totalAmount": 231,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "El Monasterio H",
+        "suggestedCategory": "Restaurantes y Ocio: Restaurantes y Cafés",
+        "totalAmount": 4.8,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Restaurante Moo",
+        "suggestedCategory": "Restaurantes y Ocio: Restaurantes y Cafés",
+        "totalAmount": 31,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Mas Av Buhaira",
+        "suggestedCategory": "Alimentación: Supermercado y Comestibles",
+        "totalAmount": 134.39,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Ayto Madrid Pag",
+        "suggestedCategory": "Impuestos y Tasas: Otros Impuestos",
+        "totalAmount": 138.45,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Openai *chatgpt Subscr",
+        "suggestedCategory": "Suministros: Software y Herramientas",
+        "totalAmount": 70.29,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Isabel Mateos Fernandez Villa",
+        "suggestedCategory": "Otros Gastos",
+        "totalAmount": 7.2,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Starbucks Coffe",
+        "suggestedCategory": "Restaurantes y Ocio: Restaurantes y Cafés",
+        "totalAmount": 4.7,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "La Maliciosa",
+        "suggestedCategory": "Restaurantes y Ocio: Restaurantes y Cafés",
+        "totalAmount": 14,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Grupo Manserco",
+        "suggestedCategory": "Otros Gastos",
+        "totalAmount": 3.5,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Metro De Madrid",
+        "suggestedCategory": "Transporte: Transporte Público",
+        "totalAmount": 6.1,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Andres Francisco Marcano Bethencourt",
+        "suggestedCategory": "Otros Gastos",
+        "totalAmount": 31,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Enrique Chenoll Fernandez",
+        "suggestedCategory": "Otros Gastos",
+        "totalAmount": 12,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "11942 Madrid Go",
+        "suggestedCategory": "Otros Gastos",
+        "totalAmount": 50.09,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Acciona Motosha",
+        "suggestedCategory": "Transporte: Taxis / VTC",
+        "totalAmount": 72.94,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Jose Maria Munoz Ruiz Dana",
+        "suggestedCategory": "Otros Gastos",
+        "totalAmount": 5.5,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "E.s. Nervion",
+        "suggestedCategory": "Transporte: Combustible",
+        "totalAmount": 15,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Confiteria Cord",
+        "suggestedCategory": "Alimentación: Comida a Domicilio / Para Llevar",
+        "totalAmount": 22.6,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "El Arco",
+        "suggestedCategory": "Restaurantes y Ocio: Restaurantes y Cafés",
+        "totalAmount": 24.6,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Viveros Balbuen",
+        "suggestedCategory": "Compras: Muebles y Decoración del Hogar",
+        "totalAmount": 9.4,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Taberna Del Por",
+        "suggestedCategory": "Restaurantes y Ocio: Restaurantes y Cafés",
+        "totalAmount": 117,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "La Tita Rita Po",
+        "suggestedCategory": "Restaurantes y Ocio: Restaurantes y Cafés",
+        "totalAmount": 28.8,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Cline Bot Inc",
+        "suggestedCategory": "Otros Gastos",
+        "totalAmount": 2.35,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Compra De Prime Video",
+        "suggestedCategory": "Suministros: Plataformas de Streaming / TV de pago",
+        "totalAmount": 2.99,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Fund. Ciudades",
+        "suggestedCategory": "Regalos y Donaciones: Donaciones a ONGs / Caridad",
+        "totalAmount": 16,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Maria Magdalena Lopez Martin",
+        "suggestedCategory": "Otros Gastos",
+        "totalAmount": 134,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Mercadona Juan",
+        "suggestedCategory": "Alimentación: Supermercado y Comestibles",
+        "totalAmount": 68.28,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Reserva En Cor",
+        "suggestedCategory": "Viajes y Vacaciones: Alojamientos",
+        "totalAmount": 30,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Ouigo Espana",
+        "suggestedCategory": "Viajes y Vacaciones: Billetes de Transporte",
+        "totalAmount": 13.5,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Alcampo Sevilla",
+        "suggestedCategory": "Alimentación: Supermercado y Comestibles",
+        "totalAmount": 196.94,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "La Extremeña",
+        "suggestedCategory": "Alimentación: Supermercado y Comestibles",
+        "totalAmount": 36.7,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Muvihit Movemen",
+        "suggestedCategory": "Transporte: Taxis / VTC",
+        "totalAmount": 10,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "The Res Brother",
+        "suggestedCategory": "Restaurantes y Ocio: Restaurantes y Cafés",
+        "totalAmount": 3.7,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Aleix Marine Tena",
+        "suggestedCategory": "Otros Gastos",
+        "totalAmount": 50,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Alimentacion Y",
+        "suggestedCategory": "Alimentación: Supermercado y Comestibles",
+        "totalAmount": 2.3,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "1860 Calenteria",
+        "suggestedCategory": "Restaurantes y Ocio: Restaurantes y Cafés",
+        "totalAmount": 6,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Naturgy Cliente",
+        "suggestedCategory": "Suministros: Gas / Calefacción",
+        "totalAmount": 50.22,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "241260 Sevilla 4",
+        "suggestedCategory": "Otros Gastos",
+        "totalAmount": 14,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Fernando Alvaro Jimenez Capitas",
+        "suggestedCategory": "Otros Gastos",
+        "totalAmount": 15.7,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Hiper Oriente I",
+        "suggestedCategory": "Alimentación: Supermercado y Comestibles",
+        "totalAmount": 18.81,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Netflix.com",
+        "suggestedCategory": "Suministros: Plataformas de Streaming / TV de pago",
+        "totalAmount": 12.48,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Oscar* Job199e4b84",
+        "suggestedCategory": "Otros Gastos",
+        "totalAmount": 30,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Transferencia Inmediata A Favor De Borja Muñoz",
+        "suggestedCategory": "Otros Gastos",
+        "totalAmount": 100,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Druni, S.a",
+        "suggestedCategory": "Cuidado Personal: Productos de Higiene y Cosmética",
+        "totalAmount": 5.99,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Djanco Burger",
+        "suggestedCategory": "Restaurantes y Ocio: Comida a Domicilio / Para Llevar",
+        "totalAmount": 14.7,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Gesconchip",
+        "suggestedCategory": "Otros Gastos",
+        "totalAmount": 20,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Bar Fabiola",
+        "suggestedCategory": "Restaurantes y Ocio: Bares y Copas",
+        "totalAmount": 28.8,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Liquidacion De Las Tarjetas De Credito",
+        "suggestedCategory": "Finanzas: Pago de Préstamos",
+        "totalAmount": 3894.4,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Nuria Martin Barrio",
+        "suggestedCategory": "Otros Gastos",
+        "totalAmount": 16.65,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Universidad Internacional De La Rioja",
+        "suggestedCategory": "Educación: Matrículas y Tasas Académicas",
+        "totalAmount": 4941.6,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Stackblitz",
+        "suggestedCategory": "Trabajo / Negocio: Software y Herramientas",
+        "totalAmount": 39.91,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Uber *eats Help.uber.c",
+        "suggestedCategory": "Alimentación: Comida a Domicilio / Para Llevar",
+        "totalAmount": 23.18,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Juan Manuel Sanchez Rodriguez",
+        "suggestedCategory": "Otros Gastos",
+        "totalAmount": 228.39,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Luis Soldado Rodriguez",
+        "suggestedCategory": "Otros Gastos",
+        "totalAmount": 38.77,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Dia 22054",
+        "suggestedCategory": "Alimentación: Supermercado y Comestibles",
+        "totalAmount": 4.59,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Ochoa Gimenez E",
+        "suggestedCategory": "Otros Gastos",
+        "totalAmount": 12,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Alwadi Restaura",
+        "suggestedCategory": "Restaurantes y Ocio: Restaurantes y Cafés",
+        "totalAmount": 32.85,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Estacion De Ser",
+        "suggestedCategory": "Transporte: Combustible",
+        "totalAmount": 4,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "96i Sprinter Se",
+        "suggestedCategory": "Compras: Ropa y Calzado",
+        "totalAmount": 9.99,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Tinglao Palmas",
+        "suggestedCategory": "Restaurantes y Ocio: Restaurantes y Cafés",
+        "totalAmount": 22.8,
+        "transactionCount": 1
+      },
+      {
+        "providerName": "Adrian Perdiguero Rivas",
+        "suggestedCategory": "Otros Gastos",
+        "totalAmount": 15,
+        "transactionCount": 1
+      }
+    ]
+  }
+}

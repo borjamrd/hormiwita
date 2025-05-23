@@ -61,7 +61,7 @@ export function InfoPanel({ userData }: InfoPanelProps) {
   const canViewCategorization = !!(userData.expensesIncomeSummary?.categorizedIncomeItems || userData.expensesIncomeSummary?.categorizedExpenseItems);
 
   return (
-    <Card className="w-full h-full flex flex-col shadow-lg rounded-lg overflow-hidden">
+    <Card className="w-full h-full flex flex-col shadow-lg overflow-hidden p-3">
       <CardHeader className="p-4 border-b">
         <CardTitle className="text-lg font-semibold text-foreground flex items-center">
           <Briefcase className="mr-2 h-5 w-5 text-primary" />

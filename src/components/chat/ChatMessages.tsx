@@ -33,7 +33,7 @@ export function ChatMessages({ messages, isLoadingAssistant }: ChatMessagesProps
                 <Bot className="h-5 w-5 text-accent animate-pulse" />
             </div>
             <div className="max-w-[70%] rounded-lg p-3 shadow-sm bg-muted text-foreground rounded-bl-none">
-              <p className="text-sm italic text-muted-foreground">hormiwita is typing...</p>
+              <p className="text-sm italic text-muted-foreground">Pensando...</p>
             </div>
           </div>
         )}
