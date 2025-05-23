@@ -22,12 +22,13 @@ export function ChatLayout({ messages, isLoadingAssistant, inputComponent }: Cha
           {/* Replace MessageSquareText with the new logo */}
           <Image 
             src="/hormiguita_logo.png" 
-            alt="hormigüita logo" 
-            width={36} // Adjust width as needed
-            height={36} // Adjust height as needed
+            alt="hormiwita logo" 
+            className='-m-5'
+            width={106} // Adjust width as needed
+            height={106} // Adjust height as needed
             priority // Optional: if logo is critical for LCP
           />
-          <h1 className="text-xl font-semibold text-foreground">hormigüita</h1>
+          <h1 className="text-xl font-semibold text-foreground">hormiwita</h1>
         </div>
         {/* Placeholder for future elements like settings or user avatar */}
       </CardHeader>

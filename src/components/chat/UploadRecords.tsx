@@ -1,18 +1,20 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { UploadCloud, FileText, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 import { analyzeBankStatement, type AnalyzeBankStatementInput, type BankStatementSummary } from '@/ai/flows/analyze-bank-statements';
+import type { CategorizedItem } from '@/ai/flows/categorize-financial-data'; // For typing categorized items
+import type { EnhancedExpenseIncomeSummary } from '@/ai/flows/generate-chat-response'; // For the final structure
 import { useToast } from "@/hooks/use-toast";
-import * as XLSX from 'xlsx';
+import * as XLSX from 'xlsx'; // For client-side Excel processing
 import { RecordCategorizer } from './RecordCategorizer';
 
 interface UploadRecordsProps {
-  onAnalysisConfirmed: (summary: BankStatementSummary) => void;
+  onAnalysisConfirmed: (summary: EnhancedExpenseIncomeSummary) => void;
   isLoadingConversation: boolean;
 }
 
@@ -21,7 +23,9 @@ export function UploadRecords({ onAnalysisConfirmed, isLoadingConversation }: Up
   const [analysisResult, setAnalysisResult] = useState<BankStatementSummary | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [hasBeenCategorized, setHasBeenCategorized] = useState(false); // Nuevo estado
+  const [hasBeenCategorized, setHasBeenCategorized] = useState(false);
+  const [categorizedIncomeForConfirmation, setCategorizedIncomeForConfirmation] = useState<CategorizedItem[] | null>(null);
+  const [categorizedExpensesForConfirmation, setCategorizedExpensesForConfirmation] = useState<CategorizedItem[] | null>(null);
   const { toast } = useToast();
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -34,7 +38,7 @@ export function UploadRecords({ onAnalysisConfirmed, isLoadingConversation }: Up
           description: "Por favor, sube un archivo menor a 5MB.",
         });
         setSelectedFile(null);
-        event.target.value = "";
+        event.target.value = ""; // Reset file input
         return;
       }
       const allowedTypes = [
@@ -51,29 +55,17 @@ export function UploadRecords({ onAnalysisConfirmed, isLoadingConversation }: Up
           description: "Por favor, sube un archivo .csv, .xls o .xlsx.",
         });
         setSelectedFile(null);
-        event.target.value = "";
+        event.target.value = ""; // Reset file input
         return;
       }
 
       setSelectedFile(file);
       setAnalysisResult(null);
       setError(null);
-      setHasBeenCategorized(false); // Resetear estado de categorización
+      setHasBeenCategorized(false);
+      setCategorizedIncomeForConfirmation(null);
+      setCategorizedExpensesForConfirmation(null);
     }
-  };
-
-  const fileToDataUri = async (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        if (typeof reader.result !== 'string') {
-          return reject(new Error('Error reading file as Data URI.'));
-        }
-        resolve(reader.result); // Devuelve el Data URI (base64)
-      };
-      reader.onerror = (error) => reject(error);
-      reader.readAsDataURL(file);
-    });
   };
 
   const handleGenerateAnalysis = async () => {
@@ -89,31 +81,34 @@ export function UploadRecords({ onAnalysisConfirmed, isLoadingConversation }: Up
     setIsAnalyzing(true);
     setError(null);
     setAnalysisResult(null);
-    setHasBeenCategorized(false); // Resetear estado de categorización
+    setHasBeenCategorized(false);
+    setCategorizedIncomeForConfirmation(null);
+    setCategorizedExpensesForConfirmation(null);
 
     try {
-      let fileContentForAI: string;
+      let csvTextContent: string;
       const fileName = selectedFile.name;
 
       if (fileName.endsWith('.csv')) {
-        fileContentForAI = await selectedFile.text();
+        csvTextContent = await selectedFile.text();
       } else if (fileName.endsWith('.xls') || fileName.endsWith('.xlsx')) {
         const arrayBuffer = await selectedFile.arrayBuffer();
         const workbook = XLSX.read(arrayBuffer, { type: 'array' });
         const firstSheetName = workbook.SheetNames[0];
+        if (!firstSheetName) {
+            throw new Error("El archivo Excel no contiene hojas.");
+        }
         const worksheet = workbook.Sheets[firstSheetName];
-        fileContentForAI = XLSX.utils.sheet_to_csv(worksheet);
+        csvTextContent = XLSX.utils.sheet_to_csv(worksheet);
+         if (!csvTextContent.trim()) {
+            throw new Error("La primera hoja del archivo Excel está vacía o no se pudo convertir a CSV.");
+        }
       } else {
-        toast({
-          variant: "destructive",
-          title: "Tipo de Archivo no Soportado",
-          description: "El formato del archivo no pudo ser procesado. Intente con CSV, XLS o XLSX.",
-        });
-        setIsAnalyzing(false);
-        return;
+        // This case should ideally be caught by file type validation earlier
+        throw new Error("Tipo de archivo no soportado para conversión a CSV.");
       }
       
-      const base64Csv = Buffer.from(fileContentForAI, 'utf-8').toString('base64');
+      const base64Csv = Buffer.from(csvTextContent, 'utf-8').toString('base64');
       const dataUri = `data:text/csv;base64,${base64Csv}`;
       
       const input: AnalyzeBankStatementInput = {
@@ -123,7 +118,7 @@ export function UploadRecords({ onAnalysisConfirmed, isLoadingConversation }: Up
       const result = await analyzeBankStatement(input);
       setAnalysisResult(result);
 
-      if (result.status === "Error Parsing" || result.status === "No Data Identified") {
+      if (result.status === "Error Parsing" || result.status === "No Data Identified" || result.status === "Unsupported File Type") {
         setError(result.feedback);
          toast({
             variant: "destructive",
@@ -134,7 +129,7 @@ export function UploadRecords({ onAnalysisConfirmed, isLoadingConversation }: Up
          toast({
             variant: "default", 
             title: "Análisis Completado",
-            description: `Estado: ${result.status}. ${result.feedback}`,
+            description: `Estado: ${result.status}. Revisa y categoriza los resultados abajo.`, // Adjusted message
         });
       }
     } catch (err) {
@@ -150,10 +145,25 @@ export function UploadRecords({ onAnalysisConfirmed, isLoadingConversation }: Up
       setIsAnalyzing(false);
     }
   };
+  
+  const handleCategorizationDataUpdate = useCallback((data: { income: CategorizedItem[] | null, expenses: CategorizedItem[] | null }) => {
+    setCategorizedIncomeForConfirmation(data.income);
+    setCategorizedExpensesForConfirmation(data.expenses);
+  }, []);
+
 
   const handleConfirmAndSend = () => {
-    if (analysisResult && (analysisResult.status === "Success" || analysisResult.status === "Partial Data") && hasBeenCategorized) {
-      onAnalysisConfirmed(analysisResult);
+    if (analysisResult && 
+        (analysisResult.status === "Success" || analysisResult.status === "Partial Data") && 
+        hasBeenCategorized) {
+      
+      const enhancedSummary: EnhancedExpenseIncomeSummary = {
+        originalSummary: analysisResult,
+        categorizedIncomeItems: categorizedIncomeForConfirmation,
+        categorizedExpenseItems: categorizedExpensesForConfirmation,
+      };
+      onAnalysisConfirmed(enhancedSummary);
+
     } else {
         toast({
             variant: "destructive",
@@ -228,7 +238,7 @@ export function UploadRecords({ onAnalysisConfirmed, isLoadingConversation }: Up
 
         {analysisResult && (
           <div className="mt-3 p-0 border-none rounded-md bg-background">
-             { (analysisResult.status === "Error Parsing" || analysisResult.status === "No Data Identified") ? (
+             { (analysisResult.status === "Error Parsing" || analysisResult.status === "No Data Identified" || analysisResult.status === "Unsupported File Type") ? (
                 <div className="text-xs text-destructive p-2 bg-destructive/10 rounded-md flex items-center">
                     <AlertCircle className="w-4 h-4 mr-2 shrink-0" />
                     {analysisResult.feedback}
@@ -236,7 +246,8 @@ export function UploadRecords({ onAnalysisConfirmed, isLoadingConversation }: Up
              ) : (
                 <RecordCategorizer 
                     analysisResult={analysisResult} 
-                    onCategorizationComplete={setHasBeenCategorized} 
+                    onCategorizationComplete={setHasBeenCategorized}
+                    onCategorizationDataUpdate={handleCategorizationDataUpdate}
                 />
              )}
           </div>

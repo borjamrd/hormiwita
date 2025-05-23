@@ -1,4 +1,4 @@
-# **App Name**: hormigüita
+# **App Name**: hormiwita
 
 ## Core Features:
 
