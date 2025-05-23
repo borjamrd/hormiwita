@@ -1,11 +1,10 @@
-
 'use server';
 /**
  * @fileOverview This file defines a Genkit flow for generating helpful chatbot responses related to personal finance and banking.
  * It also extracts user information like name, general financial objectives, specific financial objectives, and expense/income summary.
  *
  * - generateChatResponse - A function that takes user query, chat history, and existing user data,
- *   and returns a chatbot response and potentially updated user data.
+ * and returns a chatbot response and potentially updated user data.
  * - GenerateChatResponseInput - The input type for the generateChatResponse function.
  * - GenerateChatResponseOutput - The return type for the generateChatResponse function.
  * - UserData - Type for user's collected information.
@@ -77,17 +76,20 @@ const GenerateChatResponseInputSchema = z.object({
 export type GenerateChatResponseInput = z.infer<typeof GenerateChatResponseInputSchema>;
 
 // Define output schema for the main flow
+const NextExpectedInputEnum = z.enum([
+  "name", 
+  "general_objectives_selection", 
+  "specific_objectives_selection", 
+  "expense_income_upload",
+  "summary_display", 
+  "general_conversation"
+]);
+export type NextExpectedInput = z.infer<typeof NextExpectedInputEnum>;
+
 const GenerateChatResponseOutputSchema = z.object({
   response: z.string().describe('The chatbot response to the user query.'),
   updatedUserData: UserDataSchema.optional().describe('Updated user data after processing the query, including any newly extracted information.'),
-  nextExpectedInput: z.enum([
-      "name", 
-      "general_objectives_selection", 
-      "specific_objectives_selection", 
-      "expense_income_upload",
-      "summary_display", 
-      "general_conversation"
-    ]).optional().describe("Hint for the frontend on what kind of input is expected next.")
+  nextExpectedInput: NextExpectedInputEnum.optional().describe("Hint for the frontend on what kind of input is expected next.")
 });
 export type GenerateChatResponseOutput = z.infer<typeof GenerateChatResponseOutputSchema>;
 
@@ -97,14 +99,7 @@ const PromptOutputSchema = z.object({
   extractedName: z.string().nullable().optional().describe("The user's name, if extracted in the current turn based on user input and extractNameTool guidance."),
   extractedGeneralObjectives: z.array(z.string()).nullable().optional().describe("General financial objectives, if extracted in the current turn based on user input and extractGeneralObjectivesTool guidance."),
   extractedSpecificObjectives: z.array(z.string()).nullable().optional().describe("Specific financial objectives, if extracted in the current turn based on user input and extractSpecificObjectivesTool guidance."),
-  nextExpectedInput: z.enum([
-      "name", 
-      "general_objectives_selection", 
-      "specific_objectives_selection", 
-      "expense_income_upload", 
-      "summary_display", 
-      "general_conversation"
-    ]).optional().describe("Indicates the type of input the AI is expecting next.")
+  nextExpectedInput: NextExpectedInputEnum.optional().describe("Indicates the type of input the AI is expecting next.")
 });
 
 
@@ -115,7 +110,7 @@ const extractNameTool = ai.defineTool(
     inputSchema: z.object({ query: z.string() }),
     outputSchema: z.object({ name: z.string().optional() }),
   },
-  async (input) => ({ name: undefined }) // Conceptual: Actual extraction is done by LLM into PromptOutputSchema.extractedName
+  async (input) => ({ name: undefined }) 
 );
 
 const extractGeneralObjectivesTool = ai.defineTool(
@@ -125,7 +120,7 @@ const extractGeneralObjectivesTool = ai.defineTool(
     inputSchema: z.object({ query: z.string() }),
     outputSchema: z.object({ generalObjectives: z.array(z.string()).optional() }),
   },
-  async (input) => ({ generalObjectives: undefined }) // Conceptual
+  async (input) => ({ generalObjectives: undefined }) 
 );
 
 const extractSpecificObjectivesTool = ai.defineTool(
@@ -135,7 +130,7 @@ const extractSpecificObjectivesTool = ai.defineTool(
     inputSchema: z.object({ query: z.string() }),
     outputSchema: z.object({ specificObjectives: z.array(z.string()).optional() }),
   },
-  async (input) => ({ specificObjectives: undefined }) // Conceptual
+  async (input) => ({ specificObjectives: undefined }) 
 );
 
 const acknowledgeExpenseIncomeSummaryTool = ai.defineTool(
@@ -145,7 +140,7 @@ const acknowledgeExpenseIncomeSummaryTool = ai.defineTool(
     inputSchema: z.object({ query: z.string().describe("The user's message confirming the bank statement analysis, which typically includes the feedback from that analysis.") }), 
     outputSchema: z.object({ acknowledged: z.boolean().optional().describe("True if the user's message is a confirmation of the bank statement analysis.") }),
   },
-  async (input) => ({ acknowledged: true }) // Conceptual: The LLM uses this tool's description to understand the user's intent.
+  async (input) => ({ acknowledged: true }) 
 );
 
 
@@ -156,7 +151,7 @@ export async function generateChatResponse(input: GenerateChatResponseInput): Pr
 const systemPrompt = `Eres hormiwita, un asistente experto en finanzas personales. Tu objetivo principal es ayudar al usuario a organizar sus finanzas. Para ello, necesitas recopilar información en las siguientes categorías y orden: información personal (nombre), objetivos generales, objetivos concretos, relación de gastos e ingresos (a través de la subida de un extracto), y finalmente presentar un resumen para confirmación.
 
 Sigue este orden para recopilar la información y establece el campo \`nextExpectedInput\` en tu respuesta JSON según corresponda:
-1.  **Información Personal**: Si aún no conoces el nombre del usuario (\`userData.name\` no presente/vacío), tu primera prioridad es preguntarle su nombre. Establece \`nextExpectedInput: "name"\`. Si el usuario provee su nombre, extráelo en \`extractedName\`. Ejemplo: 'Hola! Encantada de saludarte. Estoy aquí para echarte una mano al organizar tus finanzas. Para comenzar y dirigirnos mejor, ¿podrías decirme tu nombre?'.
+1.  **Información Personal**: Si aún no conoces el nombre del usuario (\`userData.name\` no presente/vacío), tu primera prioridad es preguntarle su nombre. Establece \`nextExpectedInput: "name"\`. Si el usuario provee su nombre, extráelo en \`extractedName\`. Ejemplo: 'Hola! Para comenzar y dirigirnos mejor, ¿podrías decirme tu nombre?'.
 2.  **Objetivos Generales**: Con el nombre (\`userData.name\` presente) y sin objetivos generales (\`userData.generalObjectives\` no presente/vacío), pregúntale por ellos. Establece \`nextExpectedInput: "general_objectives_selection"\`. Si los provee, extráelos en \`extractedGeneralObjectives\`. Ejemplo: 'Gracias, {{userData.name}}. Ahora, ¿cuáles son tus principales objetivos financieros generales?'.
 3.  **Objetivos Concretos**: Con objetivos generales (\`userData.generalObjectives\` presente/no vacío) y sin objetivos concretos (\`userData.specificObjectives\` no presente/vacío), pregúntale por ellos, relacionados con los generales. Establece \`nextExpectedInput: "specific_objectives_selection"\`. Si los provee, extráelos en \`extractedSpecificObjectives\`. Ejemplo: 'Entendido. Dentro de Ahorro, ¿tienes objetivos más específicos?'.
 4.  **Relación de Gastos e Ingresos**: Con nombre, objetivos generales y concretos presentes, y si \`userData.expensesIncomeSummary\` no está presente, es el momento de pedir al usuario que suba sus extractos bancarios. Establece \`nextExpectedInput: "expense_income_upload"\`. Ejemplo: 'Genial. Para entender mejor tu situación actual, por favor, sube un extracto bancario reciente (Excel o CSV). Esto nos ayudará a analizar tus gastos e ingresos.' No intentes analizar el archivo directamente aquí. Solo pide que lo suban. Cuando el usuario envíe un mensaje confirmando el análisis de sus extractos (este mensaje contendrá frases como 'He confirmado el análisis' y mencionará el feedback del análisis, que es procesado por \`acknowledgeExpenseIncomeSummaryTool\`), tu respuesta de texto DEBE acusar recibo de esa confirmación, y OBLIGATORIAMENTE DEBES establecer \`nextExpectedInput: "summary_display"\` en tu respuesta JSON. Tu respuesta de texto podría ser, por ejemplo: 'Entendido, gracias por confirmar el análisis. Antes de continuar, revisemos la información que hemos recopilado.'.
@@ -183,7 +178,7 @@ const prompt = ai.definePrompt({
   ],
   input: { schema: GenerateChatResponseInputSchema },
   output: { schema: PromptOutputSchema },
-  prompt:
+  prompt: // This prompt function is effectively replaced by the 'system' prompt with handlebars
     `{{#if chatHistory}}
 Historial de chat reciente (assistant es hormiwita, user es el usuario):
 {{#each chatHistory}}
@@ -211,7 +206,7 @@ const generateChatResponseFlow = ai.defineFlow(
     inputSchema: GenerateChatResponseInputSchema,
     outputSchema: GenerateChatResponseOutputSchema,
   },
-  async (input) => {
+  async (input): Promise<GenerateChatResponseOutput> => {
     const llmCallResult = await prompt(input);
     const promptOutput = llmCallResult.output;
     
@@ -220,12 +215,14 @@ const generateChatResponseFlow = ai.defineFlow(
        return {
         response: "Lo siento, tuve un problema al procesar mi respuesta. Por favor, intenta de nuevo.",
         updatedUserData: input.userData, 
-        nextExpectedInput: "general_conversation", 
+        nextExpectedInput: "general_conversation" as const, // FIX: Added 'as const'
       };
     }
         
     const chatResponseText = promptOutput.textResponse;
-    let finalNextExpectedInput = promptOutput.nextExpectedInput || "general_conversation";
+    // Ensure finalNextExpectedInput is of the correct literal type or undefined
+    let finalNextExpectedInput: NextExpectedInput | undefined = 
+        promptOutput.nextExpectedInput || "general_conversation";
 
 
     let cumulativeName = input.userData?.name;
@@ -255,11 +252,9 @@ const generateChatResponseFlow = ai.defineFlow(
     const generalObjectivesChanged = JSON.stringify(finalUserData.generalObjectives) !== JSON.stringify(input.userData?.generalObjectives);
     const specificObjectivesChanged = JSON.stringify(finalUserData.specificObjectives) !== JSON.stringify(input.userData?.specificObjectives);
     
-    const isInitialPopulation = !input.userData && 
-      (finalUserData.name || 
-       finalUserData.generalObjectives?.length || 
-       finalUserData.specificObjectives?.length
-      );
+    const isInitialPopulation = (!input.userData?.name && finalUserData.name) || 
+                              (!input.userData?.generalObjectives?.length && finalUserData.generalObjectives?.length) ||
+                              (!input.userData?.specificObjectives?.length && finalUserData.specificObjectives?.length);
     
     const shouldIncludeUserData = nameChanged || generalObjectivesChanged || specificObjectivesChanged || isInitialPopulation;
 
@@ -270,6 +265,3 @@ const generateChatResponseFlow = ai.defineFlow(
     };
   }
 );
-
-
-    
