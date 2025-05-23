@@ -25,7 +25,7 @@ import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { ChatAvatar } from "./chat/ChatAvatar";
 // We'll need a new Genkit flow for this
-// import { generateActionPlan } from '@/ai/flows/generate-action-plan';
+import { generateActionPlanFlow } from '@/ai/flows/generate-action-plan';
 
 // Define Zod schema for the Action Plan JSON
 const ActionStepSchema = z.object({
@@ -212,46 +212,46 @@ export function ActionPlan() {
     setIsLoading(true);
 
     try {
-      // const response = await generateActionPlan({
+      // const response = await generateActionPlanFlow({
       //   userData,
-      //   currentPlanJSON: currentPlanJson,
+      //   currentPlanJSON: currentPlanJson as any,
       //   userQuery: messageContent
       // });
-      // setCurrentPlanJson(response.updatedActionPlanJSON);
+      // // setCurrentPlanJson(response.updatedActionPlanJSON);
       // addMessage('assistant', response.chatResponseText);
 
       // Placeholder until Genkit flow is ready
-      setTimeout(() => {
-        addMessage(
-          "assistant",
-          `Entendido. He registrado tu comentario: "${messageContent}". Estoy actualizando el plan... (Simulación)`
-        );
-        // Simulate plan update
-        if (currentPlanJson) {
-          const updatedPlan = {
-            ...currentPlanJson,
-            actionableSteps: [
-              ...currentPlanJson.actionableSteps,
-              {
-                id: crypto.randomUUID(),
-                description: `Nuevo paso basado en: "${messageContent.substring(
-                  0,
-                  30
-                )}..."`,
-                estimatedMonthlySavings: 15,
-                status: "pending" as const,
-              },
-            ],
-            lastUpdated: new Date().toISOString(),
-          };
-          setCurrentPlanJson(updatedPlan);
-          addMessage(
-            "assistant",
-            `He añadido un nuevo paso a tu plan. Ahora tienes ${updatedPlan.actionableSteps.length} pasos. ¿Algo más?`
-          );
-        }
-        setIsLoading(false);
-      }, 1500);
+      // setTimeout(() => {
+      //   addMessage(
+      //     "assistant",
+      //     `Entendido. He registrado tu comentario: "${messageContent}". Estoy actualizando el plan... (Simulación)`
+      //   );
+      //   // Simulate plan update
+      //   if (currentPlanJson) {
+      //     const updatedPlan = {
+      //       ...currentPlanJson,
+      //       actionableSteps: [
+      //         ...currentPlanJson.actionableSteps,
+      //         {
+      //           id: crypto.randomUUID(),
+      //           description: `Nuevo paso basado en: "${messageContent.substring(
+      //             0,
+      //             30
+      //           )}..."`,
+      //           estimatedMonthlySavings: 15,
+      //           status: "pending" as const,
+      //         },
+      //       ],
+      //       lastUpdated: new Date().toISOString(),
+      //     };
+      //     setCurrentPlanJson(updatedPlan);
+      //     addMessage(
+      //       "assistant",
+      //       `He añadido un nuevo paso a tu plan. Ahora tienes ${updatedPlan.actionableSteps.length} pasos. ¿Algo más?`
+      //     );
+      //   }
+      //   setIsLoading(false);
+      // }, 1500);
     } catch (error) {
       console.error("Error in ActionPlan chat:", error);
       addMessage(
