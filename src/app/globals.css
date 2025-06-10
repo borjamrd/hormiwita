@@ -8,6 +8,7 @@ body {
 
 @layer base {
   :root {
+    --font-lora: 'Lora', serif;
     --background: 210 20% 98%; /* Light blue-gray #F5F7FA */
     --foreground: 222.2 47.4% 11.2%; /* Default dark text */
 
