@@ -45,7 +45,7 @@ const getTopExpenseCategories = (expenseItems: CategorizedItem[] | null | undefi
 
 const chartConfig = {
   amount: { // 'amount' will be the dataKey for the bar
-    label: "Gasto Total",
+    label: "Gasto Total: {value}",
     color: "hsl(var(--chart-1))", // Using default chart-1 color (blueish)
     icon: TrendingDown,
   },
@@ -134,7 +134,7 @@ export function TopExpensesChart() {
               dataKey="amount" 
               fill="var(--color-amount)" 
               radius={4} 
-              name="Gasto Total" // Name for tooltip
+              name="Gasto Total: " // Name for tooltip
               barSize={20} // Adjust bar size as needed
             />
           </BarChart>

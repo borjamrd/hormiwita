@@ -3,6 +3,13 @@
 import { ActionPlan } from "@/components/action-plan";
 import { TopExpensesChart } from "@/components/charts/TopExpensesChart";
 import { Objectives } from "@/components/Objectives";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import useUserStore from "@/store/userStore";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -50,19 +57,22 @@ const DashboardPage = () => {
             <Objectives userData={userData} />
           </div>
 
-          <div className="bg-card p-6 rounded-lg shadow h-full">
-            <h3 className="text-xl font-semibold text-foreground mb-3">
-              Próximamente...
-            </h3>
-            <p className="text-muted-foreground">
-              Más análisis y herramientas estarán disponibles aquí.
-            </p>
-            <div className="mt-4 space-y-2">
-              <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
-              <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded animate-pulse w-5/6"></div>
-              <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded animate-pulse w-3/4"></div>
-            </div>
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Próximamente...</CardTitle>
+              <CardDescription>
+                Más análisis y herramientas estarán disponibles aquí.
+              </CardDescription>
+            </CardHeader>
+
+            <CardContent>
+              <div className="flex flex-col gap-2">
+                <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
+                <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded animate-pulse w-5/6"></div>
+                <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded animate-pulse w-3/4"></div>
+              </div>
+            </CardContent>
+          </Card>
           <div className="col-span-1 md:row-span-2 h-full">
             <ActionPlan />
           </div>

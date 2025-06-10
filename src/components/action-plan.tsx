@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import useUserStore, { type UserData } from "@/store/userStore";
+import ReactMarkdown from "react-markdown";
 import {
   Card,
   CardContent,
@@ -25,7 +26,7 @@ import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { ChatAvatar } from "./chat/ChatAvatar";
 // We'll need a new Genkit flow for this
-import { generateActionPlanFlow } from '@/ai/flows/generate-action-plan';
+import { generateActionPlanFlow } from "@/ai/flows/generate-action-plan";
 
 // Define Zod schema for the Action Plan JSON
 const ActionStepSchema = z.object({
@@ -219,7 +220,6 @@ export function ActionPlan() {
       // });
       // // setCurrentPlanJson(response.updatedActionPlanJSON);
       // addMessage('assistant', response.chatResponseText);
-
       // Placeholder until Genkit flow is ready
       // setTimeout(() => {
       //   addMessage(
@@ -303,31 +303,21 @@ export function ActionPlan() {
   };
 
   return (
-    <Card className="h-full flex flex-col shadow-lg rounded-lg col-span-1 row-span-2">
+    <Card className="h-full flex flex-col border-none bg-transparent col-span-1 row-span-2">
       {" "}
       {/* Ensure it spans correctly */}
-      <CardHeader className="border-b p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Lightbulb className="h-6 w-6 text-primary" />
-            <CardTitle className="text-lg">
-              Plan de Acción Interactivo
-            </CardTitle>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleExportJson}
-            disabled={!currentPlanJson || isLoading}
-          >
-            <FileJson className="h-4 w-4 mr-2" />
-            Exportar JSON
-          </Button>
-        </div>
-        <CardDescription className="text-xs mt-1">
-          Colabora con la IA para definir y refinar tu plan financiero.
-        </CardDescription>
-      </CardHeader>
+      <div className="flex items-center justify-between p-4 border-b">
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full"
+          onClick={handleExportJson}
+          disabled={!currentPlanJson || isLoading}
+        >
+          <FileJson className="h-4 w-4 mr-2" />
+          Exportar JSON
+        </Button>
+      </div>
       <CardContent className="flex-1 overflow-hidden p-0">
         <ScrollArea
           className="h-full"
@@ -354,7 +344,7 @@ export function ActionPlan() {
                       : "bg-muted text-foreground rounded-bl-none"
                   }`}
                 >
-                  <p className="whitespace-pre-wrap">{msg.content}</p>
+                  <ReactMarkdown>{msg.content}</ReactMarkdown>
                   <p
                     className={`mt-1 text-xs ${
                       msg.role === "user"
