@@ -35,7 +35,7 @@ export function Objectives({ userData }: ObjectivesProps) {
   const hasSpecificObjectives = userData.specificObjectives && userData.specificObjectives.length > 0;
 
   return (
-    <Card className="h-full flex flex-col">
+    <Card className="flex flex-col">
       <CardHeader className="flex">
         <CardTitle className="flex gap-2"> <Target className="h-6 w-6 text-primary mr-3 shrink-0" />Mis Objetivos</CardTitle>
       </CardHeader>

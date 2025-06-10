@@ -22,7 +22,7 @@ export function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex items-center gap-2">
+    <form onSubmit={handleSubmit} className="flex items-center gap-2 w-full p-2 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700">
       <Input
         type="text"
         placeholder="Escribe tu mensaje..."

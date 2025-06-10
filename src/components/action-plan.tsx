@@ -306,7 +306,7 @@ export function ActionPlan() {
     <Card className="h-full flex flex-col border-none bg-transparent col-span-1 row-span-2">
       {" "}
       {/* Ensure it spans correctly */}
-      <div className="flex items-center justify-between p-4 border-b">
+      <div className="flex items-center justify-between p-4">
         <Button
           variant="outline"
           size="sm"
@@ -338,7 +338,7 @@ export function ActionPlan() {
                   </div>
                 )}
                 <div
-                  className={`max-w-[75%] rounded-lg px-3 py-2 text-sm shadow-sm ${
+                  className={`max-w-[75%] rounded-xl px-3 py-2 text-sm shadow-sm ${
                     msg.role === "user"
                       ? "bg-primary text-primary-foreground rounded-br-none"
                       : "bg-muted text-foreground rounded-bl-none"
@@ -371,7 +371,7 @@ export function ActionPlan() {
                   <div className="flex-shrink-0 h-8 w-8 flex items-center justify-center rounded-full bg-primary/10 text-primary">
                     <ChatAvatar role="assistant" />
                   </div>
-                  <div className="max-w-[75%] rounded-lg px-3 py-2 text-sm shadow-sm bg-muted text-foreground rounded-bl-none">
+                  <div className="max-w-[75%] rounded-xl px-3 py-2 text-sm shadow-sm bg-muted text-foreground rounded-bl-none">
                     <div className="flex items-center space-x-1">
                       <span className="text-xs text-muted-foreground">
                         hormiwita está pensando

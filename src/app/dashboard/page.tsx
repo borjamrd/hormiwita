@@ -1,6 +1,7 @@
 "use client";
 
 import { ActionPlan } from "@/components/action-plan";
+import { ForecastPosible } from "@/components/charts/ForecastPosible";
 import { TopExpensesChart } from "@/components/charts/TopExpensesChart";
 import { Objectives } from "@/components/Objectives";
 import {
@@ -34,12 +35,7 @@ const DashboardPage = () => {
       </div>
     );
   }
-
-  const handleLogout = () => {
-    useUserStore.getState().setUserData(null);
-    router.push("/");
-  };
-
+  
   return (
     <div className="flex flex-col h-screen bg-slate-50 dark:bg-slate-900 lg:max-h-[calc(100vh-64px)]">
       <main className="flex-grow container mx-auto p-4 sm:p-4 lg:p-6 flex flex-col overflow-hidden">
@@ -52,30 +48,17 @@ const DashboardPage = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 flex-1 overflow-hidden">
-          <div className="h-full">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 grid-rows-3 lg:grid-cols-5 flex-1 overflow-hidden">
+          <div className="col-span-1 md:col-span-2 lg:col-span-3 col-row-1">
+            <ForecastPosible />
+          </div>
+          <div className="col-span-2 md:row-span-3 h-full">
+            <ActionPlan />
+          </div>
+          <div className="col-span-1 row-span-2">
             <Objectives userData={userData} />
           </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Próximamente...</CardTitle>
-              <CardDescription>
-                Más análisis y herramientas estarán disponibles aquí.
-              </CardDescription>
-            </CardHeader>
-
-            <CardContent>
-              <div className="flex flex-col gap-2">
-                <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
-                <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded animate-pulse w-5/6"></div>
-                <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded animate-pulse w-3/4"></div>
-              </div>
-            </CardContent>
-          </Card>
-          <div className="col-span-1 md:row-span-2 h-full">
-            <ActionPlan />
-          </div>
           <div className="md:col-span-2 lg:col-span-2 h-full">
             <TopExpensesChart />
           </div>
