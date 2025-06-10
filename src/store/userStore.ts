@@ -1,5 +1,6 @@
 import { create } from "zustand";
-// import jsonData from "./dummy.json"; 
+import jsonData from "./dummy.json"; 
+
 
 interface ProviderTransactionSummary {
   providerName: string;
@@ -38,6 +39,7 @@ interface UserData {
   generalObjectives?: string[];
   specificObjectives?: string[]; 
   expensesIncomeSummary?: EnhancedExpenseIncomeSummary; 
+  actionPlan?: any;
 }
 
 interface UserStore {
@@ -46,10 +48,10 @@ interface UserStore {
 }
 
 // Type assertion for the imported JSON data
-// const typedJsonData = jsonData as UserData;
+const typedJsonData = jsonData as UserData;
 
 const useUserStore = create<UserStore>((set) => ({
-  userData: null,
+  userData: typedJsonData,
   setUserData: (data) => set({ userData: data }),
 }));
 
