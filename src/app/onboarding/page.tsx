@@ -163,11 +163,11 @@ export default function ChatPage() {
     const currentMessages = [...messages, userMessage];
     setMessages(currentMessages);
     setIsLoadingAssistant(true);
-    setNextInputHint("general_conversation"); // Default to general conversation while waiting
+    setNextInputHint("general_conversation");
 
     try {
       const chatHistoryForFlow = currentMessages.slice(-10).map((msg) => ({
-        role: msg.role === "user" ? "user" : "assistant",
+        role: msg.role === "user" ? "user" as "user" : "assistant" as "assistant",
         content: msg.content,
       }));
 

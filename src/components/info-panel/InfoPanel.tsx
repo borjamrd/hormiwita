@@ -1,20 +1,17 @@
 
 "use client";
 
-import type { UserData, EnhancedExpenseIncomeSummary } from '@/ai/flows/generate-chat-response';
 import type { CategorizedItem } from '@/ai/flows/categorize-financial-data';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { AccordionSection } from './AccordionSection';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { User, Target, FileText, Briefcase, /*CheckSquare,*/ ListChecks, FilePieChart, Eye } from 'lucide-react';
-import { useState } from 'react';
+import type { UserData } from '@/ai/flows/generate-chat-response';
 import { CategorizedAccordion } from '@/components/chat/RecordCategorizer';
+import { Accordion } from '@/components/ui/accordion';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Briefcase, Eye, FilePieChart, /*CheckSquare,*/ ListChecks, Target, User } from 'lucide-react';
+import { useState } from 'react';
+import { AccordionSection } from './AccordionSection';
 
 
 interface InfoPanelProps {
