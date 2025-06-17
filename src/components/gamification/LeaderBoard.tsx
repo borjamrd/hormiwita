@@ -71,11 +71,10 @@ export function Leaderboard() {
           Clasificación de Hormiwita
         </CardTitle>
         <CardDescription>
-          ¡Compite amistosamente y ve quién es el mayor ahorrador!
+         Aviso: compite amistosamente.
         </CardDescription>
       </CardHeader>
       <CardContent className="p-4">
-        {/* Top 3 Destacado */}
         <div className="grid grid-cols-3 gap-2 mb-6">
           {sortedLeaderboard.slice(0, 3).map((user, index) => (
             <div

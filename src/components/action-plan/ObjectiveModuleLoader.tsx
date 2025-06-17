@@ -1,6 +1,7 @@
 // src/components/action-plan/ObjectiveModuleLoader.tsx
 "use client";
 
+import { InvestmentSavingsModule } from "./modules/InvestmentSavingsModule";
 import { VehicleSavingsModule } from "./modules/VehicleSavingsModule";
 
 interface Props {
@@ -14,8 +15,8 @@ export function ObjectiveModuleLoader({ flowIdentifier, onComplete }: Props) {
       return <VehicleSavingsModule onComplete={onComplete} />;
 
     // Aquí añadiríamos más 'case' para otros módulos en el futuro
-    // case 'investmentSavingsFlow':
-    //   return <InvestmentSavingsModule onComplete={onComplete} />;
+    case 'investmentSavingsFlow':
+      return <InvestmentSavingsModule onComplete={onComplete} />;
 
     default:
       return (

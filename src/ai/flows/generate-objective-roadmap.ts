@@ -1,17 +1,8 @@
 // src/ai/flows/generate-objective-roadmap.ts
-import { ai } from "@/ai/genkit"; // Importamos el objeto 'ai' centralizado
+import { ai } from "@/ai/genkit";
 import { z } from "genkit";
+import { getFlowIdentifier } from "@/lib/objectives-config";
 
-// El mapa de identificadores sigue igual
-const objectiveToFlowIdentifier: Record<string, string> = {
-  "Fondo de Emergencia": "emergencyFundFlow",
-  "Ahorro para la Jubilación": "retirementSavingsFlow",
-  "Ahorro para la Entrada de una Vivienda": "housingDownPaymentFlow",
-  "Ahorro para la Compra de un Vehículo": "vehicleSavingsFlow",
-  // ... resto de objetivos
-};
-
-// Usamos z para definir los esquemas
 export const RoadmapStepSchema = z.object({
   objective: z.string().describe("The specific objective for this step."),
   title: z.string().describe("A short, engaging title for this roadmap step."),
@@ -51,28 +42,14 @@ export const generateObjectiveRoadmap = ai.defineFlow(
     const { name, specificObjectives } = input;
 
     const prompt = `
-      Eres un asesor financiero amigable y motivador.
-      Tu tarea es crear un "roadmap" financiero personalizado para un usuario.
-
-      Datos del usuario:
-      - Nombre: ${name}
-      - Objetivos específicos: ${specificObjectives.join(", ")}
-
-      Instrucciones:
-      1.  Crea un mensaje de introducción cálido y personalizado con el nombre del usuario, felicitándole por sus objetivos.
-      2.  Para cada objetivo específico, genera un paso en el roadmap que incluya:
-          - 'objective': El nombre exacto del objetivo.
-          - 'title': Un título corto, creativo y motivador.
-          - 'description': Una descripción de 1-2 frases sobre lo que se hará.
-          - 'flowIdentifier': El identificador de flujo correspondiente usando el mapa proporcionado.
-          - 'status': Siempre 'pending'.
-      3.  Responde EXCLUSIVAMENTE con un objeto JSON válido que se ajuste al schema.
-
-      Mapa de 'objective' a 'flowIdentifier':
-      ${JSON.stringify(objectiveToFlowIdentifier, null, 2)}
+      Eres un asesor financiero amigable y motivador llamado Hormi.
+      Tu tarea es crear un "roadmap" financiero para un usuario llamado ${name}.
+      Sus objetivos específicos son: ${specificObjectives.join(", ")}.
+      Basado en estos objetivos, genera un roadmap con una 'introduction' cálida y una lista de 'steps'.
+      Para cada step, genera solo las propiedades 'objective' (el nombre exacto del objetivo), 'title' (un título creativo) y 'description' (una descripción de 1-2 frases).
+      NO generes la propiedad 'flowIdentifier'.
     `;
 
-    // Usamos ai.model para acceder al modelo
     const llmResponse = await ai.generate({
       prompt: prompt,
       output: {
@@ -81,6 +58,16 @@ export const generateObjectiveRoadmap = ai.defineFlow(
       },
     });
 
-    return llmResponse.output ?? { introduction: "", steps: [] };
+    const output = llmResponse.output;
+    if (!output) {
+      return { introduction: "No se pudo generar un plan.", steps: [] };
+    }
+
+    output.steps.forEach((step) => {
+      const identifier = getFlowIdentifier(step.objective);
+      step.flowIdentifier = identifier || "defaultFallbackFlow"; 
+     });
+  
+    return output;
   }
 );

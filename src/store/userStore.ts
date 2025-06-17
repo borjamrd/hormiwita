@@ -1,6 +1,5 @@
 import { create } from "zustand";
-import jsonData from "./dummy.json"; 
-
+import jsonData from "./dummy.json";
 
 interface ProviderTransactionSummary {
   providerName: string;
@@ -20,7 +19,7 @@ interface BankStatementSummary {
     | "Error Parsing"
     | "No Data Identified"
     | "Unsupported File Type";
-  detectedCurrency?: string; 
+  detectedCurrency?: string;
   expensesByProvider?: ProviderTransactionSummary[];
   incomeByProvider?: ProviderTransactionSummary[];
   totalExpenses?: number;
@@ -39,7 +38,7 @@ export interface RoadmapStep {
   title: string;
   description: string;
   flowIdentifier: string;
-  status: 'pending' | 'in_progress' | 'completed';
+  status: "pending" | "in_progress" | "completed";
 }
 
 export interface Roadmap {
@@ -47,31 +46,37 @@ export interface Roadmap {
   steps: RoadmapStep[];
 }
 
-
 interface UserData {
   name: string;
   generalObjectives?: string[];
   specificObjectives?: string[];
   expensesIncomeSummary?: EnhancedExpenseIncomeSummary;
   actionPlan?: any;
-  roadmap?: Roadmap | null; 
+  roadmap?: Roadmap | null;
 }
 
 interface UserStore {
   userData: UserData | null;
   setUserData: (data: Partial<UserData> | null) => void;
   setRoadmap: (roadmap: Roadmap) => void;
-  updateRoadmapStepStatus: (objective: string, status: RoadmapStep['status']) => void; 
+  updateRoadmapStepStatus: (
+    objective: string,
+    status: RoadmapStep["status"]
+  ) => void;
 }
 // Type assertion for the imported JSON data
 const typedJsonData = jsonData as UserData;
 
 const useUserStore = create<UserStore>((set) => ({
   userData: typedJsonData,
-  setUserData: (data) => set((state) => ({ userData: data ? { ...state.userData, ...data } as UserData : null })),
+  setUserData: (data) => {
+    return set((state) => ({
+      userData: data ? ({ ...state.userData, ...data } as UserData) : null,
+    }));
+  },
   setRoadmap: (roadmap) =>
     set((state) => {
-      if (!state.userData) return state; 
+      if (!state.userData) return state;
       return {
         userData: { ...state.userData, roadmap },
       };
@@ -80,11 +85,11 @@ const useUserStore = create<UserStore>((set) => ({
   updateRoadmapStepStatus: (objective, status) =>
     set((state) => {
       if (!state.userData || !state.userData.roadmap) return state;
-      
+
       const newSteps = state.userData.roadmap.steps.map((step) =>
         step.objective === objective ? { ...step, status } : step
       );
-      
+
       return {
         userData: {
           ...state.userData,

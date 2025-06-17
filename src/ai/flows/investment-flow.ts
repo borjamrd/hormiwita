@@ -1,8 +1,7 @@
-// src/ai/flows/objectives/vehicle-savings-flow.ts
+// src/ai/flows/objectives/investmentSavingsFlow.ts
 import { ai } from "@/ai/genkit";
 import { z } from "genkit";
 
-// El schema del mensaje no cambia
 const ChatMessageSchema = z.object({
   role: z.enum(["user", "assistant"]),
   content: z.string(),
@@ -22,11 +21,11 @@ const UserDataContextSchema = z
   })
   .optional();
 
-export const vehicleSavingsFlow = ai.defineFlow(
+export const investmentSavingsFlow = ai.defineFlow(
   {
-    name: "vehicleSavingsFlow",
+    name: "investmentSavingsFlow",
     inputSchema: z.object({
-      history: z.array(ChatMessageSchema),
+      history: z.array(ChatMessageSchema.nullable()),
       userData: UserDataContextSchema,
     }),
     streamSchema: z.string(),
@@ -35,13 +34,13 @@ export const vehicleSavingsFlow = ai.defineFlow(
   async ({ history, userData }, { sendChunk }) => {
     const financialContext = userData?.expensesIncomeSummary?.originalSummary
       ? `
-        Aquí tienes un resumen de la situación financiera del usuario para que tus consejos sean más precisos:
+        Contexto financiero del usuario:
         - Nombre: ${userData.name || "No especificado"}
-        - Ingresos mensuales aproximados: ${
+        - Ingresos mensuales: ${
           userData.expensesIncomeSummary.originalSummary.totalIncome ||
           "No disponible"
         }
-        - Gastos mensuales aproximados: ${
+        - Gastos mensuales: ${
           userData.expensesIncomeSummary.originalSummary.totalExpenses ||
           "No disponible"
         }
@@ -49,10 +48,10 @@ export const vehicleSavingsFlow = ai.defineFlow(
       : "No se dispone del contexto financiero del usuario.";
 
     const systemPrompt = `
-      Eres un asesor financiero amigable y motivador llamado Hormi.
+      Eres un asesor financiero amigable y motivador llamado Hormi. Tu objetivo es guiar al usuario para que cree un capital inicial para invertir.
       ${financialContext}
-      Tu objetivo es guiar al usuario para crear un plan de ahorro para comprar un vehículo.
-      Tu tono debe ser alentador y debes hacer una sola pregunta a la vez.
+      Tu tono debe ser alentador y educativo. Haz una sola pregunta a la vez.
+      Si el historial está vacío, haz la primera pregunta clave: "¿Qué tipo de inversor te consideras o te gustaría ser? Por ejemplo, ¿conservador, moderado o arriesgado?"
     `;
 
     let result;
@@ -79,6 +78,7 @@ export const vehicleSavingsFlow = ai.defineFlow(
         ],
       });
     }
+
     for await (const chunk of result.stream) {
       if (chunk.text) {
         sendChunk(chunk.text);

@@ -1,13 +1,13 @@
 // src/components/action-plan/modules/VehicleSavingsModule.tsx
 "use client";
 
-import { ChatLayout } from "@/components/chat/ChatLayout";
-import { type ChatMessage } from "@/store/types";
-import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import useUserStore from "@/store/userStore";
 import { ChatInput } from "@/components/chat/ChatInput";
+import { ChatLayout } from "@/components/chat/ChatLayout";
+import { Button } from "@/components/ui/button";
+import { type ChatMessage } from "@/store/types";
+import useUserStore from "@/store/userStore";
 import { streamFlow } from "@genkit-ai/next/client";
+import { useEffect, useState } from "react";
 
 interface Props {
   onComplete: () => void;
@@ -16,10 +16,10 @@ interface Props {
 export function VehicleSavingsModule({ onComplete }: Props) {
   const { userData } = useUserStore();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [input, setInput] = useState("");
   const [isLoadingAssistant, setIsLoadingAssistant] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
     const getInitialMessage = async () => {
       setIsLoadingAssistant(true);
       try {
@@ -28,62 +28,94 @@ export function VehicleSavingsModule({ onComplete }: Props) {
           input: { history: [] },
         });
         const assistantMessageId = "init-stream";
-        setMessages([
-          {
-            role: "assistant",
-            content: "",
-            id: assistantMessageId,
-            timestamp: new Date(),
-          },
-        ]);
+
+        if (isMounted) {
+          setMessages([
+            {
+              role: "assistant",
+              content: "",
+              id: assistantMessageId,
+              timestamp: new Date(),
+            },
+          ]);
+        }
 
         for await (const chunk of result.stream) {
-          console.log({chunk})
-          setMessages((prev) =>
-            prev
-              .filter(Boolean)
-              .map((msg) =>
-                msg.id === assistantMessageId
-                  ? { ...msg, content: (msg.content ?? "") + chunk }
-                  : msg
-              )
-          );
+          if (isMounted) {
+            setMessages((prev) =>
+              prev
+                .filter(Boolean)
+                .map((msg) =>
+                  msg.id === assistantMessageId
+                    ? { ...msg, content: (msg.content ?? "") + chunk }
+                    : msg
+                )
+            );
+          } else {
+            break;
+          }
         }
       } catch (error) {
-        console.error("Error fetching initial message:", error);
+        if (isMounted) {
+          console.error("Error fetching initial message:", error);
+        }
       } finally {
-        setIsLoadingAssistant(false);
+        if (isMounted) {
+          setIsLoadingAssistant(false);
+        }
       }
     };
+
     getInitialMessage();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const handleSendMessage = async (messageContent: string) => {
     if (!messageContent.trim() || isLoadingAssistant) return;
 
-    const newUserMessage: ChatMessage = { id: Date.now().toString(), role: 'user', content: messageContent, timestamp: new Date() };
+    const newUserMessage: ChatMessage = {
+      id: Date.now().toString(),
+      role: "user",
+      content: messageContent,
+      timestamp: new Date(),
+    };
     const newMessages = [...messages, newUserMessage];
     setMessages(newMessages);
-    // ELIMINAMOS: setInput(""), ChatInput se limpia solo
     setIsLoadingAssistant(true);
 
     try {
-      const historyForFlow = newMessages.map(m => ({ role: m.role, content: m.content }));
+      const historyForFlow = newMessages.map((m) => ({
+        role: m.role,
+        content: m.content,
+      }));
       const result = streamFlow({
-        url: '/api/vehicleSavingsFlow',
-        input: { history: historyForFlow }
+        url: "/api/vehicleSavingsFlow",
+        input: { history: historyForFlow, userData },
       });
-      
+
       const assistantMessageId = Date.now().toString();
-      setMessages(prev => [...prev, { id: assistantMessageId, role: 'assistant', content: '', timestamp: new Date() }]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: assistantMessageId,
+          role: "assistant",
+          content: "",
+          timestamp: new Date(),
+        },
+      ]);
 
       for await (const chunk of result.stream) {
-        setMessages(prev =>
-          prev.filter(Boolean).map(msg => 
-            msg.id === assistantMessageId 
-              ? { ...msg, content: (msg.content ?? "") + chunk } 
-              : msg
-          )
+        setMessages((prev) =>
+          prev
+            .filter(Boolean)
+            .map((msg) =>
+              msg.id === assistantMessageId
+                ? { ...msg, content: (msg.content ?? "") + chunk }
+                : msg
+            )
         );
       }
     } catch (error) {
@@ -93,10 +125,7 @@ export function VehicleSavingsModule({ onComplete }: Props) {
     }
   };
 
-
- 
-
-   const chatInputComponent = (
+  const chatInputComponent = (
     <ChatInput
       onSendMessage={handleSendMessage}
       isLoading={isLoadingAssistant}

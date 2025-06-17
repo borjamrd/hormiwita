@@ -16,46 +16,7 @@ import {
   type EnhancedExpenseIncomeSummary,
 } from "@/ai/flows/generate-chat-response";
 import { useToast } from "@/hooks/use-toast";
-
-const generalObjectivesOptions = [
-  "Ahorro",
-  "Reducción y Gestión de Deuda",
-  "Gestión de Gastos",
-  "Crecimiento Financiero",
-];
-
-const specificObjectivesMap: Record<string, string[]> = {
-  Ahorro: [
-    "Fondo de Emergencia",
-    "Ahorro para la Jubilación",
-    "Ahorro para la Entrada de una Vivienda",
-    "Ahorro para la Compra de un Vehículo",
-    "Ahorro para Viajes/Vacaciones",
-    "Ahorro para Educación",
-    "Ahorro para Inversiones",
-    "Ahorro para Compras Importantes",
-    "Ahorro para Eventos Especiales",
-  ],
-  "Reducción y Gestión de Deuda": [
-    "Pagar Deudas de Tarjetas de Crédito",
-    "Amortizar Préstamos Personales",
-    "Liquidar Préstamos Estudiantiles",
-    "Reducir la Hipoteca",
-    "Consolidar Deudas",
-    "Eliminar Deudas Pequeñas (Método Bola de Nieve o Avalancha)",
-  ],
-  "Gestión de Gastos": [
-    "Crear y Seguir un Presupuesto Mensual",
-    "Reducir Gastos Hormiga",
-    "Disminuir Gasto en Categorías Específicas",
-    "Optimizar Gastos Fijos",
-  ],
-  "Crecimiento Financiero": [
-    "Aumentar Ingresos",
-    "Incrementar el Patrimonio Neto",
-    "Alcanzar la Independencia Financiera",
-  ],
-};
+import { objectivesConfig } from "@/lib/objectives-config";
 
 const initialUserData: UserData = {
   name: undefined,
@@ -167,7 +128,10 @@ export default function ChatPage() {
 
     try {
       const chatHistoryForFlow = currentMessages.slice(-10).map((msg) => ({
-        role: msg.role === "user" ? "user" as "user" : "assistant" as "assistant",
+        role:
+          msg.role === "user"
+            ? ("user" as "user")
+            : ("assistant" as "assistant"),
         content: msg.content,
       }));
 
@@ -210,6 +174,17 @@ export default function ChatPage() {
     } finally {
       setIsLoadingAssistant(false);
     }
+  };
+
+  const generalObjectivesOptions = objectivesConfig.map((obj) => obj.category);
+
+  const getSpecificObjectiveOptions = (
+    selectedGeneral: string[] | undefined
+  ): string[] => {
+    if (!selectedGeneral) return [];
+    return objectivesConfig
+      .filter((general) => selectedGeneral.includes(general.category))
+      .flatMap((general) => general.specifics.map((specific) => specific.name));
   };
 
   const handleGeneralObjectivesSubmit = async (
@@ -276,19 +251,6 @@ export default function ChatPage() {
     await triggerInitialAIQuery();
   };
 
-  const getSpecificObjectiveOptions = (
-    selectedGeneral: string[] | undefined
-  ): string[] => {
-    if (!selectedGeneral || selectedGeneral.length === 0) return [];
-    let options: string[] = [];
-    selectedGeneral.forEach((general) => {
-      if (specificObjectivesMap[general]) {
-        options = [...options, ...specificObjectivesMap[general]];
-      }
-    });
-    return Array.from(new Set(options));
-  };
-
   const currentSpecificOptions = useMemo(
     () => getSpecificObjectiveOptions(userData.generalObjectives),
     [userData.generalObjectives]
@@ -302,7 +264,6 @@ export default function ChatPage() {
         showUploadRecords ||
         showConfirmOnboarding)
     ) {
-      // While loading, if a special input was expected, show a disabled chat input
       return <ChatInput onSendMessage={() => {}} isLoading={true} />;
     }
 
