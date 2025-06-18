@@ -68,7 +68,7 @@ interface UserStore {
 const typedJsonData = jsonData as UserData;
 
 const useUserStore = create<UserStore>((set) => ({
-  userData: typedJsonData,
+  userData: null,
   setUserData: (data) => {
     return set((state) => ({
       userData: data ? ({ ...state.userData, ...data } as UserData) : null,
