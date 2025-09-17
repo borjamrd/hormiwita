@@ -21,10 +21,10 @@ git clone git@github.com:borjamrd/hormiwita.git
 cd hormiwita
 
 # Instala las dependencias
-npm install
+pnpm install
 
 # Levanta el proyecto local
-npm run dev
+pnpm run dev
 
 ```
 
@@ -34,10 +34,10 @@ Usamos Genkit para crear AI workflows
 Documentacion: https://genkit.dev/docs/nextjs/
 
 ```bash
-npm run genkit:watch
+pnpm run genkit:watch
 
 # o bien
-npm run genkit:dev
+pnpm run genkit:dev
 
 #revisa el puerto localhost:4000
 ```
